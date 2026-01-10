@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 基础样式 */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  @apply bg-warm-50 text-gray-800 min-h-screen;
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+  padding-bottom: 100px;
+}
+
+/* 自定义组件类 */
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-to-br from-dabo to-dabo-dark text-white font-semibold 
+           py-4 px-6 rounded-xl shadow-card transition-transform active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-gray-800 font-medium py-4 px-6 rounded-xl 
+           shadow-card transition-transform active:scale-95;
+  }
+
+  .card {
+    @apply bg-white rounded-xl p-5 shadow-card;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-base
+           transition-colors focus:outline-none focus:border-dabo;
+  }
+
+  .panel {
+    @apply card animate-slide-up;
+  }
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 2px;
+}
+
+/* Toast动画 */
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.8);
+}
