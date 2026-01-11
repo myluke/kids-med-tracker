@@ -39,29 +39,66 @@ const router = useRouter()
 const { t } = useI18n()
 const store = useRecordsStore()
 const error = ref('')
+const handled = ref(false)
 
 let subscription = null
 let timeoutId = null
 
-onMounted(() => {
-  // 监听认证状态变化（Supabase 会异步从 URL hash 解析 token）
+async function handleSignIn(session) {
+  if (handled.value) return
+  handled.value = true
+  clearTimeout(timeoutId)
+
+  if (!session) {
+    error.value = t('views.authCallback.invalidToken')
+    return
+  }
+
+  try {
+    await store.bootstrap()
+    router.replace('/')
+  } catch (err) {
+    console.error('Bootstrap error:', err)
+    error.value = err.message || t('views.authCallback.unknownError')
+  }
+}
+
+onMounted(async () => {
+  // 1. 先检查 URL 中是否有 code 参数（PKCE 流程）
+  const params = new URLSearchParams(window.location.search)
+  const code = params.get('code')
+
+  if (code) {
+    // 使用 code 交换 session
+    const { data, error: authError } = await supabase.auth.exchangeCodeForSession(code)
+    if (authError) {
+      console.error('Exchange code error:', authError)
+      error.value = t('views.authCallback.invalidToken')
+      return
+    }
+    await handleSignIn(data.session)
+    return
+  }
+
+  // 2. 检查 URL hash 中是否有 token（传统流程）
+  // Supabase 会自动处理，我们监听状态变化
   const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session) {
-      clearTimeout(timeoutId)
-      try {
-        await store.bootstrap()
-        router.replace('/')
-      } catch (err) {
-        console.error('Bootstrap error:', err)
-        error.value = err.message || t('views.authCallback.unknownError')
-      }
+    console.log('Auth state change:', event, !!session)
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+      await handleSignIn(session)
     }
   })
   subscription = data.subscription
 
-  // 超时处理：10秒后如果还没登录成功，显示错误
+  // 3. 也检查是否已经有 session（可能在监听器注册前就处理完了）
+  const { data: sessionData } = await supabase.auth.getSession()
+  if (sessionData.session) {
+    await handleSignIn(sessionData.session)
+  }
+
+  // 超时处理
   timeoutId = setTimeout(() => {
-    if (!error.value && router.currentRoute.value.name === 'auth-callback') {
+    if (!handled.value && !error.value) {
       error.value = t('views.authCallback.invalidToken')
     }
   }, 10000)
