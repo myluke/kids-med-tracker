@@ -49,44 +49,6 @@
     </div>
 
     <div class="card mt-4 p-5">
-      <h2 class="text-base font-semibold text-slate-900">
-        {{ t('views.invite.verifyTitle') }}
-      </h2>
-      <p class="mt-1 text-sm text-slate-600">
-        {{ t('views.invite.verifySubtitle') }}
-      </p>
-
-      <div class="mt-4 space-y-2">
-        <div
-          v-if="siteKey"
-          ref="turnstileEl"
-          class="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200"
-        />
-
-        <div
-          v-if="!turnstileAvailable || !siteKey"
-          class="space-y-2"
-        >
-          <div class="text-sm text-slate-600">
-            {{ siteKey ? t('turnstile.unavailable') : t('turnstile.missingSiteKey') }}
-          </div>
-          <input
-            v-model="turnstileToken"
-            class="input-field w-full"
-            :placeholder="t('turnstile.manualTokenPlaceholder')"
-            autocomplete="off"
-            :disabled="isSubmitting"
-          >
-        </div>
-
-        <div
-          v-if="!turnstileToken"
-          class="text-xs text-slate-500"
-        >
-          {{ t('turnstile.hint') }}
-        </div>
-      </div>
-
       <div
         v-if="errorMessage"
         class="mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-700 ring-1 ring-rose-200"
@@ -124,7 +86,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useRecordsStore } from '@/stores/records'
@@ -145,65 +107,12 @@ const tokenPreview = computed(() => {
 const isSubmitting = ref(false)
 const isSuccess = ref(false)
 
-const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || ''
-const turnstileEl = ref(null)
-const turnstileToken = ref('')
-const turnstileWidgetId = ref(null)
-const turnstileAvailable = ref(true)
-
 const errorMessage = computed(() => records.error || '')
 
 const isAcceptDisabled = computed(() => {
   const tokenOk = !!token.value
-  const tsOk = !!turnstileToken.value
-  return isSubmitting.value || isSuccess.value || !tokenOk || !tsOk
+  return isSubmitting.value || isSuccess.value || !tokenOk
 })
-
-function mountTurnstile() {
-  turnstileToken.value = ''
-  turnstileAvailable.value = true
-
-  if (!siteKey || !turnstileEl.value) return
-  if (!window.turnstile) {
-    turnstileAvailable.value = false
-    return
-  }
-
-  try {
-    turnstileWidgetId.value = window.turnstile.render(turnstileEl.value, {
-      sitekey: siteKey,
-      theme: 'light',
-      callback: (tokenValue) => {
-        turnstileToken.value = tokenValue
-      },
-      'error-callback': () => {
-        turnstileToken.value = ''
-      },
-      'expired-callback': () => {
-        turnstileToken.value = ''
-      }
-    })
-  } catch {
-    turnstileAvailable.value = false
-  }
-}
-
-function resetTurnstile() {
-  if (!window.turnstile) {
-    turnstileToken.value = ''
-    return
-  }
-  if (turnstileWidgetId.value == null) {
-    turnstileToken.value = ''
-    return
-  }
-
-  try {
-    window.turnstile.reset(turnstileWidgetId.value)
-  } finally {
-    turnstileToken.value = ''
-  }
-}
 
 async function onAccept() {
   if (isAcceptDisabled.value) return
@@ -213,13 +122,12 @@ async function onAccept() {
 
   try {
     await records.acceptInvite({
-      token: token.value,
-      turnstileToken: turnstileToken.value
+      token: token.value
     })
     isSuccess.value = true
     await router.replace({ path: '/' })
   } catch {
-    resetTurnstile()
+    // 错误已在 store 中处理
   } finally {
     isSubmitting.value = false
   }
@@ -228,19 +136,4 @@ async function onAccept() {
 async function onGoHome() {
   await router.replace({ path: '/' })
 }
-
-onMounted(() => {
-  mountTurnstile()
-})
-
-onUnmounted(() => {
-  if (!window.turnstile) return
-  if (turnstileWidgetId.value == null) return
-
-  try {
-    window.turnstile.remove(turnstileWidgetId.value)
-  } finally {
-    turnstileWidgetId.value = null
-  }
-})
 </script>

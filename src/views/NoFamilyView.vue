@@ -74,37 +74,6 @@
           >
         </div>
 
-        <div class="space-y-2">
-          <div
-            v-if="siteKey"
-            ref="turnstileEl"
-            class="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200"
-          />
-
-          <div
-            v-if="!turnstileAvailable || !siteKey"
-            class="space-y-2"
-          >
-            <div class="text-sm text-slate-600">
-              {{ siteKey ? t('turnstile.unavailable') : t('turnstile.missingSiteKey') }}
-            </div>
-            <input
-              v-model="turnstileToken"
-              class="input-field w-full"
-              :placeholder="t('turnstile.manualTokenPlaceholder')"
-              autocomplete="off"
-              :disabled="isSubmitting"
-            >
-          </div>
-
-          <div
-            v-if="!turnstileToken"
-            class="text-xs text-slate-500"
-          >
-            {{ t('turnstile.hint') }}
-          </div>
-        </div>
-
         <div
           v-if="errorMessage"
           class="rounded-xl bg-rose-50 p-3 text-sm text-rose-700 ring-1 ring-rose-200"
@@ -135,7 +104,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watchEffect } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useRecordsStore } from '@/stores/records'
@@ -147,70 +116,17 @@ const records = useRecordsStore()
 const familyName = ref('')
 const isSubmitting = ref(false)
 
-const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || ''
-const turnstileEl = ref(null)
-const turnstileToken = ref('')
-const turnstileWidgetId = ref(null)
-const turnstileAvailable = ref(true)
-
 const hasFamilies = computed(() => (records.families?.length || 0) > 0)
 const errorMessage = computed(() => records.error || '')
 
 const isSubmitDisabled = computed(() => {
   const nameOk = familyName.value.trim().length > 0
-  const tokenOk = !!turnstileToken.value
-  return isSubmitting.value || !nameOk || !tokenOk
+  return isSubmitting.value || !nameOk
 })
 
 watchEffect(() => {
   if (hasFamilies.value) router.replace({ path: '/' })
 })
-
-function mountTurnstile() {
-  turnstileToken.value = ''
-  turnstileAvailable.value = true
-
-  if (!siteKey || !turnstileEl.value) return
-  if (!window.turnstile) {
-    turnstileAvailable.value = false
-    return
-  }
-
-  try {
-    turnstileWidgetId.value = window.turnstile.render(turnstileEl.value, {
-      sitekey: siteKey,
-      theme: 'light',
-      callback: (token) => {
-        turnstileToken.value = token
-      },
-      'error-callback': () => {
-        turnstileToken.value = ''
-      },
-      'expired-callback': () => {
-        turnstileToken.value = ''
-      }
-    })
-  } catch {
-    turnstileAvailable.value = false
-  }
-}
-
-function resetTurnstile() {
-  if (!window.turnstile) {
-    turnstileToken.value = ''
-    return
-  }
-  if (turnstileWidgetId.value == null) {
-    turnstileToken.value = ''
-    return
-  }
-
-  try {
-    window.turnstile.reset(turnstileWidgetId.value)
-  } finally {
-    turnstileToken.value = ''
-  }
-}
 
 async function onCreateFamily() {
   if (isSubmitDisabled.value) return
@@ -218,12 +134,11 @@ async function onCreateFamily() {
   isSubmitting.value = true
   try {
     await records.createFamily({
-      name: familyName.value.trim(),
-      turnstileToken: turnstileToken.value
+      name: familyName.value.trim()
     })
     await router.replace({ path: '/' })
   } catch {
-    resetTurnstile()
+    // 错误已在 store 中处理
   } finally {
     isSubmitting.value = false
   }
@@ -232,19 +147,4 @@ async function onCreateFamily() {
 async function onGoHome() {
   await router.replace({ path: '/' })
 }
-
-onMounted(() => {
-  mountTurnstile()
-})
-
-onUnmounted(() => {
-  if (!window.turnstile) return
-  if (turnstileWidgetId.value == null) return
-
-  try {
-    window.turnstile.remove(turnstileWidgetId.value)
-  } finally {
-    turnstileWidgetId.value = null
-  }
-})
 </script>
