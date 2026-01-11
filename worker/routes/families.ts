@@ -45,7 +45,6 @@ families.post('/', async c => {
   const parsed = createFamilySchema.safeParse(json)
   if (!parsed.success) return fail(c, 400, 'BAD_REQUEST', 'Invalid request body')
 
-  const supabase = createUserClient(c.env, accessToken)
   const serviceClient = createServiceClient(c.env)
 
   // 使用 Service Client 检查用户创建的家庭数量（绕过 RLS）
@@ -63,8 +62,8 @@ families.post('/', async c => {
     return fail(c, 403, 'FAMILY_LIMIT', 'Family creation limit reached')
   }
 
-  // 创建家庭
-  const { data: family, error: createError } = await supabase
+  // 使用 Service Client 创建家庭（绕过 RLS，因为新用户还不是任何家庭的成员）
+  const { data: family, error: createError } = await serviceClient
     .from('families')
     .insert({ name: parsed.data.name, created_by_user_id: user.id })
     .select()
@@ -75,15 +74,15 @@ families.post('/', async c => {
     return fail(c, 500, 'DB_ERROR', 'Failed to create family')
   }
 
-  // 将创建者加入家庭
-  const { error: memberError } = await supabase
+  // 使用 Service Client 将创建者加入家庭
+  const { error: memberError } = await serviceClient
     .from('family_members')
     .insert({ family_id: family.id, user_id: user.id, role: 'owner' })
 
   if (memberError) {
     console.error('Failed to add member:', memberError)
     // 回滚：删除刚创建的家庭
-    await supabase.from('families').delete().eq('id', family.id)
+    await serviceClient.from('families').delete().eq('id', family.id)
     return fail(c, 500, 'DB_ERROR', 'Failed to create family')
   }
 

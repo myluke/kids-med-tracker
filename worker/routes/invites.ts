@@ -92,10 +92,8 @@ invites.post('/accept', async c => {
     return fail(c, 410, 'GONE', 'Invite expired')
   }
 
-  const supabase = createUserClient(c.env, accessToken)
-
-  // 将用户加入家庭
-  const { error: memberError } = await supabase
+  // 使用 Service Client 将用户加入家庭（绕过 RLS，因为新用户还不是任何家庭的成员）
+  const { error: memberError } = await serviceClient
     .from('family_members')
     .upsert({
       family_id: invite.family_id,
