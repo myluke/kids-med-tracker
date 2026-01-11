@@ -74,19 +74,6 @@ auth.get('/me', async c => {
 
   try {
     const serviceClient = createServiceClient(c.env)
-
-    // 使用 upsert：不存在则创建用户，存在则更新登录时间
-    await serviceClient
-      .from('user_profiles')
-      .upsert({
-        id: user.id,
-        email: user.email,
-        last_login_at: new Date().toISOString()
-      }, {
-        onConflict: 'id'
-      })
-
-    // 获取用户家庭列表
     const families = await getUserFamilies(serviceClient, user.id)
 
     return ok(c, { user, families })
