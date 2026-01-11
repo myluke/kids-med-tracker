@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import type { AppEnv } from '../types'
 import { ok, fail } from '../utils/http'
-import { createUserClient } from '../lib/supabase'
+import { createUserClient, createServiceClient } from '../lib/supabase'
 
 const createFamilySchema = z.object({
   name: z.string().trim().min(1).max(50)
@@ -46,9 +46,10 @@ families.post('/', async c => {
   if (!parsed.success) return fail(c, 400, 'BAD_REQUEST', 'Invalid request body')
 
   const supabase = createUserClient(c.env, accessToken)
+  const serviceClient = createServiceClient(c.env)
 
-  // 检查用户创建的家庭数量
-  const { count, error: countError } = await supabase
+  // 使用 Service Client 检查用户创建的家庭数量（绕过 RLS）
+  const { count, error: countError } = await serviceClient
     .from('families')
     .select('*', { count: 'exact', head: true })
     .eq('created_by_user_id', user.id)
