@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import type { AppEnv } from '../types'
 import { ok, fail } from '../utils/http'
-import { createServiceClient, createUserClient } from '../lib/supabase'
+import { createServiceClient, getUserFamilies } from '../lib/supabase'
 import { optionalUser } from '../middleware/auth'
 
 const auth = new Hono<AppEnv>()
@@ -31,9 +31,9 @@ auth.post('/send-magic-link', async c => {
   }
 
   try {
-    const supabase = createServiceClient(c.env)
+    const serviceClient = createServiceClient(c.env)
 
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await serviceClient.auth.signInWithOtp({
       email,
       options: {
         emailRedirectTo: `${c.env.APP_URL}/auth/callback`
@@ -57,17 +57,7 @@ auth.post('/send-magic-link', async c => {
  * 登出
  */
 auth.post('/logout', async c => {
-  const accessToken = c.get('accessToken')
-
-  if (accessToken) {
-    try {
-      const supabase = createUserClient(c.env, accessToken)
-      await supabase.auth.signOut()
-    } catch {
-      // 忽略登出错误
-    }
-  }
-
+  // 服务端不需要做特殊处理，客户端会清除本地 session
   return ok(c, { loggedOut: true })
 })
 
@@ -77,17 +67,16 @@ auth.post('/logout', async c => {
  */
 auth.get('/me', async c => {
   const user = c.get('user')
-  const accessToken = c.get('accessToken')
 
-  if (!user || !accessToken) {
+  if (!user) {
     return ok(c, { user: null, families: [] })
   }
 
   try {
-    const supabase = createUserClient(c.env, accessToken)
+    const serviceClient = createServiceClient(c.env)
 
     // 使用 upsert：不存在则创建用户，存在则更新登录时间
-    await supabase
+    await serviceClient
       .from('user_profiles')
       .upsert({
         id: user.id,
@@ -98,24 +87,7 @@ auth.get('/me', async c => {
       })
 
     // 获取用户家庭列表
-    const { data: memberships, error } = await supabase
-      .from('family_members')
-      .select('role, family_id, families(id, name)')
-      .eq('user_id', user.id)
-
-    if (error) {
-      console.error('Failed to fetch families:', error)
-      return ok(c, { user, families: [] })
-    }
-
-    const families = (memberships || []).map(m => {
-      const family = m.families as unknown as { id: string; name: string } | null
-      return {
-        id: family?.id ?? '',
-        name: family?.name ?? '',
-        role: m.role
-      }
-    })
+    const families = await getUserFamilies(serviceClient, user.id)
 
     return ok(c, { user, families })
   } catch (err) {

@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import type { AppEnv } from '../types'
 import { ok, fail } from '../utils/http'
-import { createUserClient, createServiceClient } from '../lib/supabase'
+import { createServiceClient, getUserFamilies } from '../lib/supabase'
 
 const createFamilySchema = z.object({
   name: z.string().trim().min(1).max(50)
@@ -12,34 +12,17 @@ const families = new Hono<AppEnv>()
 
 families.get('/', async c => {
   const user = c.get('user')
-  const accessToken = c.get('accessToken')
-  if (!user || !accessToken) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
+  if (!user) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
 
-  const supabase = createUserClient(c.env, accessToken)
-
-  const { data, error } = await supabase
-    .from('family_members')
-    .select('role, families(id, name)')
-    .eq('user_id', user.id)
-
-  if (error) {
-    console.error('Failed to fetch families:', error)
-    return fail(c, 500, 'DB_ERROR', 'Failed to fetch families')
-  }
-
-  const results = (data || []).map(row => ({
-    id: (row.families as { id: string; name: string }).id,
-    name: (row.families as { id: string; name: string }).name,
-    role: row.role
-  }))
+  const serviceClient = createServiceClient(c.env)
+  const results = await getUserFamilies(serviceClient, user.id)
 
   return ok(c, results)
 })
 
 families.post('/', async c => {
   const user = c.get('user')
-  const accessToken = c.get('accessToken')
-  if (!user || !accessToken) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
+  if (!user) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
 
   const json = await c.req.json().catch(() => null)
   const parsed = createFamilySchema.safeParse(json)

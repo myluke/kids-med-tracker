@@ -3,7 +3,7 @@ import { z } from 'zod'
 import type { AppEnv } from '../types'
 import { ok, fail } from '../utils/http'
 import { randomTokenBase64Url, sha256Hex } from '../utils/crypto'
-import { createUserClient, createServiceClient } from '../lib/supabase'
+import { createServiceClient, checkFamilyMembership } from '../lib/supabase'
 
 const createInviteSchema = z.object({
   familyId: z.string().min(1)
@@ -21,24 +21,17 @@ const invites = new Hono<AppEnv>()
 
 invites.post('/', async c => {
   const user = c.get('user')
-  const accessToken = c.get('accessToken')
-  if (!user || !accessToken) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
+  if (!user) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
 
   const json = await c.req.json().catch(() => null)
   const parsed = createInviteSchema.safeParse(json)
   if (!parsed.success) return fail(c, 400, 'BAD_REQUEST', 'Invalid request body')
 
-  const supabase = createUserClient(c.env, accessToken)
+  const serviceClient = createServiceClient(c.env)
 
-  // 检查用户是否是 owner（RLS 策略会阻止非 owner 创建邀请，但我们提前检查以返回友好错误）
-  const { data: membership } = await supabase
-    .from('family_members')
-    .select('role')
-    .eq('family_id', parsed.data.familyId)
-    .eq('user_id', user.id)
-    .single()
-
-  if (!membership || membership.role !== 'owner') {
+  // 检查用户是否是 owner
+  const role = await checkFamilyMembership(serviceClient, parsed.data.familyId, user.id)
+  if (role !== 'owner') {
     return fail(c, 403, 'FORBIDDEN', 'Only owner can invite')
   }
 
@@ -46,7 +39,7 @@ invites.post('/', async c => {
   const tokenHash = await sha256Hex(token + c.env.INVITE_TOKEN_PEPPER)
   const expiresAt = addDaysIso(7)
 
-  const { error } = await supabase
+  const { error } = await serviceClient
     .from('invites')
     .insert({
       family_id: parsed.data.familyId,
@@ -69,8 +62,7 @@ invites.post('/', async c => {
 
 invites.post('/accept', async c => {
   const user = c.get('user')
-  const accessToken = c.get('accessToken')
-  if (!user || !accessToken) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
+  if (!user) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
 
   const json = await c.req.json().catch(() => null)
   const parsed = acceptInviteSchema.safeParse(json)
@@ -78,8 +70,8 @@ invites.post('/accept', async c => {
 
   const tokenHash = await sha256Hex(parsed.data.token + c.env.INVITE_TOKEN_PEPPER)
 
-  // 使用 service client 查询邀请（因为 RLS 可能限制用户查看未接受的邀请）
   const serviceClient = createServiceClient(c.env)
+
   const { data: invite } = await serviceClient
     .from('invites')
     .select('id, family_id, role, expires_at, used_at')
@@ -92,7 +84,7 @@ invites.post('/accept', async c => {
     return fail(c, 410, 'GONE', 'Invite expired')
   }
 
-  // 使用 Service Client 将用户加入家庭（绕过 RLS，因为新用户还不是任何家庭的成员）
+  // 将用户加入家庭
   const { error: memberError } = await serviceClient
     .from('family_members')
     .upsert({
@@ -108,7 +100,7 @@ invites.post('/accept', async c => {
     return fail(c, 500, 'DB_ERROR', 'Failed to join family')
   }
 
-  // 标记邀请已使用（使用 service client 以绕过 RLS）
+  // 标记邀请已使用
   await serviceClient
     .from('invites')
     .update({

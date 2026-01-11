@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import type { AppEnv } from '../types'
 import { ok, fail } from '../utils/http'
-import { createUserClient } from '../lib/supabase'
+import { createServiceClient, checkFamilyMembership } from '../lib/supabase'
 
 const createChildSchema = z.object({
   familyId: z.string().min(1),
@@ -22,16 +22,20 @@ const children = new Hono<AppEnv>()
 
 children.get('/', async c => {
   const user = c.get('user')
-  const accessToken = c.get('accessToken')
-  if (!user || !accessToken) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
+  if (!user) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
 
   const familyId = c.req.query('familyId')
   if (!familyId) return fail(c, 400, 'BAD_REQUEST', 'Missing familyId')
 
-  const supabase = createUserClient(c.env, accessToken)
+  const serviceClient = createServiceClient(c.env)
 
-  // RLS 会自动检查用户是否是家庭成员
-  const { data, error } = await supabase
+  // 检查用户是否是家庭成员
+  const role = await checkFamilyMembership(serviceClient, familyId, user.id)
+  if (!role) {
+    return fail(c, 403, 'FORBIDDEN', 'Not a family member')
+  }
+
+  const { data, error } = await serviceClient
     .from('children')
     .select('id, name, emoji, color')
     .eq('family_id', familyId)
@@ -47,28 +51,21 @@ children.get('/', async c => {
 
 children.post('/', async c => {
   const user = c.get('user')
-  const accessToken = c.get('accessToken')
-  if (!user || !accessToken) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
+  if (!user) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
 
   const json = await c.req.json().catch(() => null)
   const parsed = createChildSchema.safeParse(json)
   if (!parsed.success) return fail(c, 400, 'BAD_REQUEST', 'Invalid request body')
 
-  const supabase = createUserClient(c.env, accessToken)
+  const serviceClient = createServiceClient(c.env)
 
   // 检查用户是否是 owner
-  const { data: membership } = await supabase
-    .from('family_members')
-    .select('role')
-    .eq('family_id', parsed.data.familyId)
-    .eq('user_id', user.id)
-    .single()
-
-  if (!membership || membership.role !== 'owner') {
+  const role = await checkFamilyMembership(serviceClient, parsed.data.familyId, user.id)
+  if (role !== 'owner') {
     return fail(c, 403, 'FORBIDDEN', 'Only owner can manage children')
   }
 
-  const { data: child, error } = await supabase
+  const { data: child, error } = await serviceClient
     .from('children')
     .insert({
       family_id: parsed.data.familyId,
@@ -89,25 +86,18 @@ children.post('/', async c => {
 
 children.patch('/:id', async c => {
   const user = c.get('user')
-  const accessToken = c.get('accessToken')
-  if (!user || !accessToken) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
+  if (!user) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
 
   const childId = c.req.param('id')
   const json = await c.req.json().catch(() => null)
   const parsed = updateChildSchema.safeParse(json)
   if (!parsed.success) return fail(c, 400, 'BAD_REQUEST', 'Invalid request body')
 
-  const supabase = createUserClient(c.env, accessToken)
+  const serviceClient = createServiceClient(c.env)
 
   // 检查用户是否是 owner
-  const { data: membership } = await supabase
-    .from('family_members')
-    .select('role')
-    .eq('family_id', parsed.data.familyId)
-    .eq('user_id', user.id)
-    .single()
-
-  if (!membership || membership.role !== 'owner') {
+  const role = await checkFamilyMembership(serviceClient, parsed.data.familyId, user.id)
+  if (role !== 'owner') {
     return fail(c, 403, 'FORBIDDEN', 'Only owner can manage children')
   }
 
@@ -120,7 +110,7 @@ children.patch('/:id', async c => {
     return fail(c, 400, 'BAD_REQUEST', 'No fields to update')
   }
 
-  const { error, count } = await supabase
+  const { error, count } = await serviceClient
     .from('children')
     .update(updateData)
     .eq('id', childId)
@@ -140,28 +130,21 @@ children.patch('/:id', async c => {
 
 children.delete('/:id', async c => {
   const user = c.get('user')
-  const accessToken = c.get('accessToken')
-  if (!user || !accessToken) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
+  if (!user) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
 
   const childId = c.req.param('id')
   const familyId = c.req.query('familyId')
   if (!familyId) return fail(c, 400, 'BAD_REQUEST', 'Missing familyId')
 
-  const supabase = createUserClient(c.env, accessToken)
+  const serviceClient = createServiceClient(c.env)
 
   // 检查用户是否是 owner
-  const { data: membership } = await supabase
-    .from('family_members')
-    .select('role')
-    .eq('family_id', familyId)
-    .eq('user_id', user.id)
-    .single()
-
-  if (!membership || membership.role !== 'owner') {
+  const role = await checkFamilyMembership(serviceClient, familyId, user.id)
+  if (role !== 'owner') {
     return fail(c, 403, 'FORBIDDEN', 'Only owner can manage children')
   }
 
-  const { error, count } = await supabase
+  const { error, count } = await serviceClient
     .from('children')
     .delete()
     .eq('id', childId)
