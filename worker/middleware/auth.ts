@@ -1,19 +1,6 @@
 import type { MiddlewareHandler } from 'hono'
-import { createRemoteJWKSet, jwtVerify } from 'jose'
 import type { AppEnv, User } from '../types'
-import { sha256Hex } from '../utils/crypto'
-
-const jwksByOrigin = new Map<string, ReturnType<typeof createRemoteJWKSet>>()
-
-function getJwks(origin: string) {
-  const existing = jwksByOrigin.get(origin)
-  if (existing) return existing
-
-  const url = new URL('/cdn-cgi/access/certs', origin)
-  const jwks = createRemoteJWKSet(url)
-  jwksByOrigin.set(origin, jwks)
-  return jwks
-}
+import { createServiceClient } from '../lib/supabase'
 
 function jsonError(status: number, code: string, message: string) {
   return new Response(
@@ -28,46 +15,80 @@ function jsonError(status: number, code: string, message: string) {
   )
 }
 
-async function devUserFromHeader(email: string): Promise<User> {
-  const normalized = email.trim().toLowerCase()
-  const id = `dev-${await sha256Hex(normalized)}`
-  return { id, email: normalized }
-}
-
-export const requireUser: MiddlewareHandler<AppEnv> = async (c, next) => {
-  if (c.env.ENV === 'local') {
-    const devEmail = c.req.header('x-dev-user')
-    if (devEmail) {
-      c.set('user', await devUserFromHeader(devEmail))
-      await next()
-      return
-    }
+/**
+ * 从请求中提取 Supabase access token
+ * 优先级：Authorization header > sb-access-token cookie
+ */
+function extractAccessToken(c: { req: { header: (name: string) => string | undefined } }): string | null {
+  // 从 Authorization header 获取
+  const authHeader = c.req.header('Authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.slice(7)
   }
 
-  const token = c.req.header('cf-access-jwt-assertion')
-  if (!token) {
-    return jsonError(401, 'UNAUTHENTICATED', 'Missing Access JWT')
+  return null
+}
+
+/**
+ * 认证中间件：验证 Supabase JWT 并获取用户信息
+ * 验证成功后将用户信息和 access token 存入上下文
+ */
+export const requireUser: MiddlewareHandler<AppEnv> = async (c, next) => {
+  const accessToken = extractAccessToken(c)
+
+  if (!accessToken) {
+    return jsonError(401, 'UNAUTHENTICATED', 'Not logged in')
   }
 
   try {
-    const url = new URL(c.req.url)
-    const jwks = getJwks(url.origin)
+    const supabase = createServiceClient(c.env)
 
-    const { payload } = await jwtVerify(token, jwks, {
-      audience: c.env.ACCESS_AUD,
-      issuer: c.env.ACCESS_ISS
-    })
+    // 使用 service client 验证 JWT
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken)
 
-    const sub = payload.sub
-    const email = payload.email
-
-    if (typeof sub !== 'string' || typeof email !== 'string') {
-      return jsonError(401, 'UNAUTHENTICATED', 'Invalid Access JWT claims')
+    if (error || !user) {
+      return jsonError(401, 'UNAUTHENTICATED', 'Invalid or expired session')
     }
 
-    c.set('user', { id: sub, email })
+    // 将用户信息和 access token 存入上下文
+    c.set('user', {
+      id: user.id,
+      email: user.email || ''
+    } as User)
+    c.set('accessToken', accessToken)
+
     await next()
   } catch {
-    return jsonError(401, 'UNAUTHENTICATED', 'Invalid Access JWT')
+    return jsonError(401, 'UNAUTHENTICATED', 'Session validation failed')
   }
+}
+
+/**
+ * 可选认证中间件：尝试读取用户，但不强制要求
+ * 用于部分需要区分登录/未登录状态的路由
+ */
+export const optionalUser: MiddlewareHandler<AppEnv> = async (c, next) => {
+  const accessToken = extractAccessToken(c)
+
+  if (!accessToken) {
+    await next()
+    return
+  }
+
+  try {
+    const supabase = createServiceClient(c.env)
+    const { data: { user } } = await supabase.auth.getUser(accessToken)
+
+    if (user) {
+      c.set('user', {
+        id: user.id,
+        email: user.email || ''
+      } as User)
+      c.set('accessToken', accessToken)
+    }
+  } catch {
+    // 忽略错误，继续处理请求
+  }
+
+  await next()
 }

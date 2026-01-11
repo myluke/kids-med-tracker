@@ -138,6 +138,41 @@
     "manualTokenPlaceholder": "输入 Turnstile token（本地可用 dev）"
   },
   "views": {
+    "login": {
+      "title": "宝贝康复助手",
+      "subtitle": "登录以开始记录宝贝的康复情况",
+      "magicLink": {
+        "title": "邮箱登录",
+        "subtitle": "我们将发送登录链接到您的邮箱",
+        "sendButton": "发送登录链接",
+        "sentTitle": "邮件已发送",
+        "sentSubtitle": "登录链接已发送到 {email}",
+        "checkSpam": "如未收到邮件，请检查垃圾邮件文件夹",
+        "resendButton": "重新发送",
+        "resendCountdown": "{seconds}秒后可重新发送"
+      },
+      "emailStep": {
+        "emailLabel": "邮箱地址",
+        "emailPlaceholder": "请输入邮箱"
+      },
+      "codeStep": {
+        "backButton": "返回修改邮箱"
+      },
+      "errors": {
+        "sendMagicLinkFailed": "发送登录链接失败，请重试",
+        "invalidToken": "登录链接无效",
+        "expiredToken": "登录链接已过期",
+        "authFailed": "登录失败，请重试",
+        "unknown": "发生未知错误"
+      }
+    },
+    "authCallback": {
+      "processing": "正在验证登录…",
+      "error": "登录失败",
+      "backToLogin": "返回登录页面",
+      "invalidToken": "登录链接无效或已过期",
+      "unknownError": "发生未知错误"
+    },
     "noFamily": {
       "title": "还没有加入家庭",
       "subtitle": "加入家庭后即可开始记录与共享。",

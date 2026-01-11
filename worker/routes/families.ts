@@ -2,62 +2,91 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import type { AppEnv } from '../types'
 import { ok, fail } from '../utils/http'
-import { consumeRateLimit } from '../services/rateLimit'
-import { verifyTurnstile } from '../services/turnstile'
-import { countFamiliesCreatedByUser, createFamily, listFamiliesForUser } from '../db/queries'
+import { createUserClient } from '../lib/supabase'
 
 const createFamilySchema = z.object({
-  name: z.string().trim().min(1).max(50),
-  turnstileToken: z.string().min(1)
+  name: z.string().trim().min(1).max(50)
 })
 
 const families = new Hono<AppEnv>()
 
 families.get('/', async c => {
   const user = c.get('user')
-  if (!user) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
+  const accessToken = c.get('accessToken')
+  if (!user || !accessToken) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
 
-  const results = await listFamiliesForUser(c.env.DB, user.id)
+  const supabase = createUserClient(c.env, accessToken)
+
+  const { data, error } = await supabase
+    .from('family_members')
+    .select('role, families(id, name)')
+    .eq('user_id', user.id)
+
+  if (error) {
+    console.error('Failed to fetch families:', error)
+    return fail(c, 500, 'DB_ERROR', 'Failed to fetch families')
+  }
+
+  const results = (data || []).map(row => ({
+    id: (row.families as { id: string; name: string }).id,
+    name: (row.families as { id: string; name: string }).name,
+    role: row.role
+  }))
+
   return ok(c, results)
 })
 
 families.post('/', async c => {
   const user = c.get('user')
-  if (!user) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
+  const accessToken = c.get('accessToken')
+  if (!user || !accessToken) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
 
   const json = await c.req.json().catch(() => null)
   const parsed = createFamilySchema.safeParse(json)
   if (!parsed.success) return fail(c, 400, 'BAD_REQUEST', 'Invalid request body')
 
-  const skipTurnstile = c.env.ENV === 'local' && parsed.data.turnstileToken === 'dev'
-  if (!skipTurnstile) {
-    const remoteIp = c.req.header('cf-connecting-ip')
-    const turnstile = await verifyTurnstile(c.env.TURNSTILE_SECRET_KEY, parsed.data.turnstileToken, remoteIp)
-    if (!turnstile.ok) {
-      return fail(c, 400, 'TURNSTILE_FAILED', 'Turnstile verification failed')
-    }
+  const supabase = createUserClient(c.env, accessToken)
+
+  // 检查用户创建的家庭数量
+  const { count, error: countError } = await supabase
+    .from('families')
+    .select('*', { count: 'exact', head: true })
+    .eq('created_by_user_id', user.id)
+
+  if (countError) {
+    console.error('Failed to count families:', countError)
+    return fail(c, 500, 'DB_ERROR', 'Failed to check family limit')
   }
 
-  const rate = await consumeRateLimit({
-    db: c.env.DB,
-    userId: user.id,
-    action: 'family_create',
-    windowMs: 10 * 60 * 1000,
-    limit: 3
-  })
-
-  if (!rate.allowed) {
-    c.header('Retry-After', String(rate.retryAfterSeconds ?? 60))
-    return fail(c, 429, 'RATE_LIMITED', 'Too many requests')
-  }
-
-  const createdCount = await countFamiliesCreatedByUser(c.env.DB, user.id)
-  if (createdCount >= 3) {
+  if ((count || 0) >= 3) {
     return fail(c, 403, 'FAMILY_LIMIT', 'Family creation limit reached')
   }
 
-  const family = await createFamily(c.env.DB, { name: parsed.data.name, createdByUserId: user.id })
-  return ok(c, family, 201)
+  // 创建家庭
+  const { data: family, error: createError } = await supabase
+    .from('families')
+    .insert({ name: parsed.data.name, created_by_user_id: user.id })
+    .select()
+    .single()
+
+  if (createError) {
+    console.error('Failed to create family:', createError)
+    return fail(c, 500, 'DB_ERROR', 'Failed to create family')
+  }
+
+  // 将创建者加入家庭
+  const { error: memberError } = await supabase
+    .from('family_members')
+    .insert({ family_id: family.id, user_id: user.id, role: 'owner' })
+
+  if (memberError) {
+    console.error('Failed to add member:', memberError)
+    // 回滚：删除刚创建的家庭
+    await supabase.from('families').delete().eq('id', family.id)
+    return fail(c, 500, 'DB_ERROR', 'Failed to create family')
+  }
+
+  return ok(c, { id: family.id, name: family.name, createdAt: family.created_at }, 201)
 })
 
 export default families

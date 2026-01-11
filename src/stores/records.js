@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { supabase } from '@/lib/supabase'
 
 export const medications = [
   { name: '布洛芬', icon: '🔥', isFeverMed: true, interval: 6 },
@@ -21,10 +22,13 @@ async function apiFetch(path, { method = 'GET', json, query, headers } = {}) {
     })
   }
 
-  const devUserEmail = import.meta.env.VITE_DEV_USER_EMAIL
+  // 从 Supabase 获取 access token
+  const { data: { session } } = await supabase.auth.getSession()
+  const accessToken = session?.access_token
+
   const requestHeaders = {
     ...(json ? { 'Content-Type': 'application/json' } : {}),
-    ...(devUserEmail ? { 'X-Dev-User': devUserEmail } : {}),
+    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     ...(headers || {})
   }
 
@@ -104,6 +108,7 @@ export const useRecordsStore = defineStore('records', () => {
 
   const recordsByChild = ref({})
 
+  const initialized = ref(false)
   const loading = ref({
     bootstrap: false
   })
@@ -134,6 +139,12 @@ export const useRecordsStore = defineStore('records', () => {
       user.value = me.user
       families.value = me.families || []
 
+      // 用户未登录则直接返回
+      if (!user.value) {
+        initialized.value = true
+        return
+      }
+
       if (!currentFamilyId.value && families.value.length > 0) {
         currentFamilyId.value = families.value[0].id
       }
@@ -156,6 +167,7 @@ export const useRecordsStore = defineStore('records', () => {
       error.value = e instanceof Error ? e.message : String(e)
     } finally {
       loading.value.bootstrap = false
+      initialized.value = true
     }
   }
 
@@ -233,13 +245,10 @@ export const useRecordsStore = defineStore('records', () => {
     return normalized
   }
 
-  const createFamily = async ({ name, turnstileToken }) => {
+  const createFamily = async ({ name }) => {
     const family = await apiFetch('/api/families', {
       method: 'POST',
-      json: {
-        name,
-        turnstileToken
-      }
+      json: { name }
     })
 
     await bootstrap()
@@ -258,10 +267,10 @@ export const useRecordsStore = defineStore('records', () => {
     })
   }
 
-  const acceptInvite = async ({ token, turnstileToken }) => {
+  const acceptInvite = async ({ token }) => {
     const res = await apiFetch('/api/invites/accept', {
       method: 'POST',
-      json: { token, turnstileToken }
+      json: { token }
     })
 
     await bootstrap()
@@ -472,7 +481,33 @@ export const useRecordsStore = defineStore('records', () => {
     return { totalDays, totalMeds, avgCough }
   }
 
-  bootstrap()
+  // ============== 认证相关方法 ==============
+
+  /**
+   * 登出
+   */
+  const logout = async () => {
+    // 先登出 Supabase
+    await supabase.auth.signOut()
+
+    // 通知后端
+    try {
+      await apiFetch('/api/auth/logout', { method: 'POST' })
+    } catch {
+      // 忽略错误，本地状态已清除
+    }
+
+    // 清除本地状态
+    user.value = null
+    families.value = []
+    currentFamilyId.value = null
+    children.value = []
+    currentChild.value = null
+    recordsByChild.value = {}
+  }
+
+  // 不自动执行 bootstrap，由路由守卫控制
+  // bootstrap()
 
   return {
     user,
@@ -483,6 +518,7 @@ export const useRecordsStore = defineStore('records', () => {
     children,
     currentChild,
 
+    initialized,
     loading,
     error,
 
@@ -496,6 +532,9 @@ export const useRecordsStore = defineStore('records', () => {
     createFamily,
     createInvite,
     acceptInvite,
+
+    // 认证相关
+    logout,
 
     switchChild,
     loadChildren,

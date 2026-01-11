@@ -138,6 +138,41 @@
     "manualTokenPlaceholder": "Enter Turnstile token (use dev locally)"
   },
   "views": {
+    "login": {
+      "title": "Kids Recovery Assistant",
+      "subtitle": "Log in to start tracking your child's recovery",
+      "magicLink": {
+        "title": "Email Login",
+        "subtitle": "We'll send a login link to your email",
+        "sendButton": "Send Login Link",
+        "sentTitle": "Email Sent",
+        "sentSubtitle": "Login link sent to {email}",
+        "checkSpam": "Check your spam folder if you don't see the email",
+        "resendButton": "Resend",
+        "resendCountdown": "Resend in {seconds}s"
+      },
+      "emailStep": {
+        "emailLabel": "Email address",
+        "emailPlaceholder": "Enter your email"
+      },
+      "codeStep": {
+        "backButton": "Change email"
+      },
+      "errors": {
+        "sendMagicLinkFailed": "Failed to send login link, please try again",
+        "invalidToken": "Invalid login link",
+        "expiredToken": "Login link has expired",
+        "authFailed": "Login failed, please try again",
+        "unknown": "An unknown error occurred"
+      }
+    },
+    "authCallback": {
+      "processing": "Verifying login...",
+      "error": "Login Failed",
+      "backToLogin": "Back to login",
+      "invalidToken": "Invalid or expired login link",
+      "unknownError": "An unknown error occurred"
+    },
     "noFamily": {
       "title": "You are not in a family yet",
       "subtitle": "Join a family to start tracking and sharing.",
