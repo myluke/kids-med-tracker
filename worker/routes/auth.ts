@@ -2,8 +2,13 @@ import { Hono } from 'hono'
 import type { AppEnv } from '../types'
 import { ok, fail } from '../utils/http'
 import { createServiceClient, createUserClient } from '../lib/supabase'
+import { optionalUser } from '../middleware/auth'
 
 const auth = new Hono<AppEnv>()
+
+// /me 和 /logout 需要可选认证
+auth.use('/me', optionalUser)
+auth.use('/logout', optionalUser)
 
 /**
  * 验证邮箱格式

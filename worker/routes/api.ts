@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import type { AppEnv } from '../types'
-import { requireUser, optionalUser } from '../middleware/auth'
+import { requireUser } from '../middleware/auth'
 import auth from './auth'
 import families from './families'
 import invites from './invites'
@@ -23,21 +23,8 @@ api.get('/health', c => {
   return c.json({ ok: true })
 })
 
-// 认证路由（大部分不需要认证中间件）
-// send-magic-link 不需要认证
-api.post('/auth/send-magic-link', async (c) => {
-  return auth.fetch(c.req.raw, c.env)
-})
-
-// /auth/me 需要可选认证
-api.get('/auth/me', optionalUser, async (c) => {
-  return auth.fetch(c.req.raw, c.env)
-})
-
-// logout 需要可选认证
-api.post('/auth/logout', optionalUser, async (c) => {
-  return auth.fetch(c.req.raw, c.env)
-})
+// 认证路由（中间件在 auth.ts 内部处理）
+api.route('/auth', auth)
 
 // 邀请验证路由（无需认证）
 api.get('/invites/verify/:token', async c => {
