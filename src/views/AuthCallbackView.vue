@@ -64,39 +64,22 @@ async function handleSignIn(session) {
 }
 
 onMounted(async () => {
-  // 1. 先检查 URL 中是否有 code 参数（PKCE 流程）
-  const params = new URLSearchParams(window.location.search)
-  const code = params.get('code')
-
-  if (code) {
-    // 使用 code 交换 session
-    const { data, error: authError } = await supabase.auth.exchangeCodeForSession(code)
-    if (authError) {
-      console.error('Exchange code error:', authError)
-      error.value = t('views.authCallback.invalidToken')
-      return
-    }
-    await handleSignIn(data.session)
-    return
-  }
-
-  // 2. 检查 URL hash 中是否有 token（传统流程）
-  // Supabase 会自动处理，我们监听状态变化
+  // Supabase 的 detectSessionInUrl: true 会自动处理 URL 中的 code/token
+  // 我们只需监听认证状态变化
   const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
     console.log('Auth state change:', event, !!session)
-    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+    if (event === 'SIGNED_IN' && session) {
       await handleSignIn(session)
+    } else if (event === 'INITIAL_SESSION') {
+      // 初始 session 检查 - 如果已有 session 则处理
+      if (session) {
+        await handleSignIn(session)
+      }
     }
   })
   subscription = data.subscription
 
-  // 3. 也检查是否已经有 session（可能在监听器注册前就处理完了）
-  const { data: sessionData } = await supabase.auth.getSession()
-  if (sessionData.session) {
-    await handleSignIn(sessionData.session)
-  }
-
-  // 超时处理
+  // 超时处理：如果 10 秒内没有收到认证事件，显示错误
   timeoutId = setTimeout(() => {
     if (!handled.value && !error.value) {
       error.value = t('views.authCallback.invalidToken')
