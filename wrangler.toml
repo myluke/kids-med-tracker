@@ -7,13 +7,13 @@ assets = { directory = "./dist", binding = "ASSETS" }
 [[d1_databases]]
 binding = "DB"
 database_name = "kids-med-prod"
-database_id = "REPLACE_WITH_PROD_DATABASE_ID"
+database_id = "6853c50e-c42b-4372-8b9f-74e2216fb673"
 migrations_dir = "worker/db/migrations"
 
 [vars]
-ACCESS_AUD = "REPLACE_WITH_ACCESS_AUD"
-ACCESS_ISS = "https://REPLACE_WITH_YOUR_TEAM.cloudflareaccess.com"
-TURNSTILE_SITE_KEY = "REPLACE_WITH_TURNSTILE_SITE_KEY"
+ACCESS_AUD = "27f209f2b2a71a6a25c2888363e1ef969e23040ef9dee6de16a7a57cd7b43a3a"
+ACCESS_ISS = "https://kanheze.cloudflareaccess.com"
+TURNSTILE_SITE_KEY = "0x4AAAAAACLx0QMQhI5Vng5o"
 ENV = "production"
 
 [env.preview]
@@ -22,5 +22,5 @@ ENV = "preview"
 [[env.preview.d1_databases]]
 binding = "DB"
 database_name = "kids-med-preview"
-database_id = "REPLACE_WITH_PREVIEW_DATABASE_ID"
+database_id = "a79a3bd8-33c6-490d-89a8-97730f2627ee"
 migrations_dir = "worker/db/migrations"

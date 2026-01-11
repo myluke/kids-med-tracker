@@ -46,7 +46,7 @@ export const requireUser: MiddlewareHandler<AppEnv> = async (c, next) => {
 
   const token = c.req.header('cf-access-jwt-assertion')
   if (!token) {
-    return jsonError(401, 'UNAUTHENTICATED', 'Missing Access JWT'))
+    return jsonError(401, 'UNAUTHENTICATED', 'Missing Access JWT')
   }
 
   try {
@@ -62,12 +62,12 @@ export const requireUser: MiddlewareHandler<AppEnv> = async (c, next) => {
     const email = payload.email
 
     if (typeof sub !== 'string' || typeof email !== 'string') {
-      return jsonError(401, 'UNAUTHENTICATED', 'Invalid Access JWT claims'))
+      return jsonError(401, 'UNAUTHENTICATED', 'Invalid Access JWT claims')
     }
 
     c.set('user', { id: sub, email })
     await next()
   } catch {
-    return jsonError(401, 'UNAUTHENTICATED', 'Invalid Access JWT'))
+    return jsonError(401, 'UNAUTHENTICATED', 'Invalid Access JWT')
   }
 }
