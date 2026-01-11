@@ -1,5 +1,6 @@
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Line } from 'vue-chartjs'
 import { 
   Chart as ChartJS, 
@@ -12,7 +13,7 @@ import {
   Legend,
   Filler
 } from 'chart.js'
-import { useRecordsStore, children } from '@/stores/records'
+import { useRecordsStore } from '@/stores/records'
 
 ChartJS.register(
   CategoryScale, 
@@ -26,9 +27,10 @@ ChartJS.register(
 )
 
 const store = useRecordsStore()
+const { t, locale } = useI18n()
 
 const currentColor = computed(() => {
-  const child = children.find(c => c.id === store.currentChild)
+  const child = store.children.find(c => c.id === store.currentChild)
   return child?.color || '#4A90D9'
 })
 
@@ -41,10 +43,10 @@ const chartData = computed(() => {
 
   return {
     labels: tempData.value.map(d => 
-      d.time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+      d.time.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
     ),
     datasets: [{
-      label: '体温',
+      label: t('chart.temp.label'),
       data: tempData.value.map(d => d.value),
       borderColor: currentColor.value,
       backgroundColor: currentColor.value + '20',
@@ -122,8 +124,11 @@ const warningLinePlugin = {
 
 <template>
   <div class="h-48">
-    <div v-if="!chartData" class="h-full flex items-center justify-center text-gray-400">
-      暂无体温数据
+    <div
+      v-if="!chartData"
+      class="h-full flex items-center justify-center text-gray-400"
+    >
+      {{ t('chart.temp.empty') }}
     </div>
     <Line 
       v-else

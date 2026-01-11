@@ -1,0 +1,169 @@
+{
+  "app": {
+    "title": "宝贝康复助手",
+    "subtitle": "记录用药 · 追踪症状 · 安心护理"
+  },
+  "nav": {
+    "home": "首页",
+    "stats": "统计",
+    "export": "导出"
+  },
+  "common": {
+    "confirm": "确认",
+    "cancel": "取消",
+    "delete": "删除",
+    "today": "今天",
+    "yesterday": "昨天",
+    "dayBeforeYesterday": "前天",
+    "notFilled": "未填写",
+    "working": "处理中…"
+  },
+  "toast": {
+    "exported": "✓ 已导出记录",
+    "deleted": "已删除",
+    "noteAdded": "✓ 已添加备注",
+    "medRecorded": "✓ 已记录 {drug}",
+    "coughRecorded": "✓ 已记录咳嗽 - {level}",
+    "tempRecorded": "✓ 已记录体温 {value}°",
+    "childAdded": "✓ 已添加孩子 {name}"
+  },
+  "confirm": {
+    "deleteRecord": "确定删除这条记录吗？"
+  },
+  "prompt": {
+    "quickNote": "快速备注：",
+    "childName": "请输入孩子昵称："
+  },
+  "stats": {
+    "tempTrend24h": "🌡️ 体温趋势（近24小时）",
+    "coughTrend3d": "🫁 咳嗽频次（近3天）",
+    "recovery": "📊 康复统计",
+    "totalDays": "记录天数",
+    "totalMeds": "总用药次数",
+    "avgCough": "平均每日咳嗽",
+    "dayUnit": "天",
+    "timesUnit": "次"
+  },
+  "todayStats": {
+    "med": "今日用药",
+    "cough": "咳嗽次数",
+    "temp": "最近体温"
+  },
+  "history": {
+    "title": "📋 记录历史",
+    "empty": "暂无记录",
+    "filter": {
+      "all": "全部",
+      "med": "用药",
+      "cough": "咳嗽"
+    },
+    "record": {
+      "medTemp": " · 体温 {temp}°",
+      "coughMain": "咳嗽 - {level}",
+      "tempMain": "体温 {value}°",
+      "tempStatus": {
+        "fever": "发热",
+        "lowFever": "低热",
+        "normal": "正常"
+      },
+      "note": "备注",
+      "default": "记录"
+    }
+  },
+  "panels": {
+    "med": {
+      "title": "💊 记录用药",
+      "doseLabel": "剂量",
+      "dosePlaceholder": "如：5ml / 1片",
+      "tempLabel": "当前体温（可选）"
+    },
+    "cough": {
+      "title": "🫁 记录咳嗽",
+      "noteLabel": "备注（可选）",
+      "notePlaceholder": "如：睡前咳嗽加重"
+    },
+    "temp": {
+      "title": "🌡️ 记录体温",
+      "preciseLabel": "精确体温"
+    },
+    "submit": "✓ 确认记录"
+  },
+  "quickActions": {
+    "med": "记录用药",
+    "cough": "记录咳嗽",
+    "temp": "记录体温",
+    "note": "快速备注"
+  },
+  "alerts": {
+    "selectDrug": "请选择药物",
+    "enterTemp": "请输入体温"
+  },
+  "timer": {
+    "title": "💊 退烧药状态",
+    "noRecord": "暂无退烧药记录",
+    "canTake": "可以用药",
+    "optional": "可酌情用药",
+    "wait": "请等待",
+    "sinceLast": "距上次服用 {drug}",
+    "needWait": "还需等待约 {hours}小时{mins}分钟"
+  },
+  "chart": {
+    "temp": {
+      "label": "体温",
+      "empty": "暂无体温数据"
+    },
+    "cough": {
+      "label": "咳嗽次数",
+      "times": "{count} 次"
+    }
+  },
+  "child": {
+    "boy": "男孩",
+    "girl": "女孩"
+  },
+  "export": {
+    "filePrefix": "康复记录",
+    "reportTitle": "宝贝康复记录",
+    "exportedAt": "导出时间",
+    "med": "用药",
+    "cough": "咳嗽",
+    "temp": "体温",
+    "note": "备注",
+    "tempInline": " 体温 {temp}°"
+  },
+  "turnstile": {
+    "missingSiteKey": "未配置 Turnstile 站点密钥",
+    "unavailable": "Turnstile 暂不可用，可手动输入 token",
+    "hint": "完成验证后才能继续",
+    "manualTokenPlaceholder": "输入 Turnstile token（本地可用 dev）"
+  },
+  "views": {
+    "noFamily": {
+      "title": "还没有加入家庭",
+      "subtitle": "加入家庭后即可开始记录与共享。",
+      "bullets": {
+        "trackTogether": "多人协作记录同一份数据",
+        "invites": "通过一次性邀请链接加入",
+        "privacy": "只有家庭成员可访问"
+      },
+      "createTitle": "创建家庭",
+      "createSubtitle": "你将成为该家庭的所有者。",
+      "familyNameLabel": "家庭名称",
+      "familyNamePlaceholder": "如：我们家",
+      "createButton": "创建并开始",
+      "backToHome": "返回首页"
+    },
+    "invite": {
+      "title": "接受邀请",
+      "subtitle": "通过验证后加入对方家庭。",
+      "tokenLabel": "邀请码",
+      "tokenPreviewEmpty": "无",
+      "missingToken": "缺少邀请码",
+      "verifyTitle": "安全验证",
+      "verifySubtitle": "完成 Turnstile 验证后才能接受邀请。",
+      "acceptButton": "接受邀请",
+      "success": "已加入家庭",
+      "backToHome": "返回首页"
+    }
+  }
+}

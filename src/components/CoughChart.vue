@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Bar } from 'vue-chartjs'
 import { 
   Chart as ChartJS, 
@@ -10,7 +11,7 @@ import {
   Tooltip, 
   Legend 
 } from 'chart.js'
-import { useRecordsStore, children } from '@/stores/records'
+import { useRecordsStore } from '@/stores/records'
 
 ChartJS.register(
   CategoryScale, 
@@ -22,19 +23,20 @@ ChartJS.register(
 )
 
 const store = useRecordsStore()
+const { t } = useI18n()
 
 const currentColor = computed(() => {
-  const child = children.find(c => c.id === store.currentChild)
+  const child = store.children.find(c => c.id === store.currentChild)
   return child?.color || '#4A90D9'
 })
 
-const coughData = computed(() => store.getCoughData(3))
+const coughData = computed(() => store.getCoughData(3, t))
 
 const chartData = computed(() => {
   return {
     labels: coughData.value.map(d => d.label),
     datasets: [{
-      label: '咳嗽次数',
+      label: t('chart.cough.label'),
       data: coughData.value.map(d => d.count),
       backgroundColor: currentColor.value,
       borderRadius: 6,
@@ -52,7 +54,7 @@ const chartOptions = {
     },
     tooltip: {
       callbacks: {
-        label: (context) => `${context.parsed.y} 次`
+        label: (context) => t('chart.cough.times', { count: context.parsed.y })
       }
     }
   },
@@ -77,6 +79,9 @@ const chartOptions = {
 
 <template>
   <div class="h-48">
-    <Bar :data="chartData" :options="chartOptions" />
+    <Bar
+      :data="chartData"
+      :options="chartOptions"
+    />
   </div>
 </template>

@@ -1,8 +1,10 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRecordsStore } from '@/stores/records'
 
 const store = useRecordsStore()
+const { t } = useI18n()
 
 // 每分钟更新一次
 const now = ref(Date.now())
@@ -25,9 +27,9 @@ const timerData = computed(() => {
   if (!lastMed) {
     return {
       display: '--:--',
-      label: '暂无退烧药记录',
+      label: t('timer.noRecord'),
       status: 'safe',
-      statusText: '可以用药',
+      statusText: t('timer.canTake'),
       canTake: true
     }
   }
@@ -43,17 +45,17 @@ const timerData = computed(() => {
   if (diffHours >= 6) {
     return {
       display,
-      label: `距上次服用 ${lastMed.drug}`,
+      label: t('timer.sinceLast', { drug: lastMed.drug }),
       status: 'safe',
-      statusText: '可以用药',
+      statusText: t('timer.canTake'),
       canTake: true
     }
   } else if (diffHours >= 4) {
     return {
       display,
-      label: `距上次服用 ${lastMed.drug}`,
+      label: t('timer.sinceLast', { drug: lastMed.drug }),
       status: 'warning',
-      statusText: '可酌情用药',
+      statusText: t('timer.optional'),
       canTake: true
     }
   } else {
@@ -61,9 +63,9 @@ const timerData = computed(() => {
     const waitMins = Math.ceil((4 - diffHours - waitHours) * 60)
     return {
       display,
-      label: `还需等待约 ${waitHours}小时${waitMins}分钟`,
+      label: t('timer.needWait', { hours: waitHours, mins: waitMins }),
       status: 'danger',
-      statusText: '请等待',
+      statusText: t('timer.wait'),
       canTake: false
     }
   }
@@ -90,7 +92,7 @@ const statusClasses = computed(() => {
   <div class="card">
     <div class="flex justify-between items-center mb-4">
       <span class="text-gray-500 font-semibold flex items-center gap-2">
-        💊 退烧药状态
+        {{ t('timer.title') }}
       </span>
       <span 
         class="px-3 py-1 rounded-full text-xs font-medium"

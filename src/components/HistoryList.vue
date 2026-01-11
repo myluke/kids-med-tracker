@@ -1,15 +1,17 @@
 <script setup>
 import { ref, computed, inject } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRecordsStore } from '@/stores/records'
 
 const store = useRecordsStore()
 const toast = inject('toast')
+const { t, locale } = useI18n()
 
 const currentFilter = ref('all')
 const filters = [
-  { key: 'all', label: '全部' },
-  { key: 'med', label: '用药' },
-  { key: 'cough', label: '咳嗽' }
+  { key: 'all' },
+  { key: 'med' },
+  { key: 'cough' }
 ]
 
 const filteredRecords = computed(() => {
@@ -27,8 +29,8 @@ const filteredRecords = computed(() => {
 const formatTime = (isoString) => {
   const date = new Date(isoString)
   return {
-    date: date.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' }),
-    time: date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    date: date.toLocaleDateString(locale.value, { month: 'numeric', day: 'numeric' }),
+    time: date.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
   }
 }
 
@@ -39,38 +41,45 @@ const getRecordDisplay = (record) => {
         icon: '💊',
         iconBg: 'bg-blue-100',
         main: record.drug,
-        sub: record.dosage + (record.temp ? ` · 体温 ${record.temp}°` : '')
+        sub: record.dosage + (record.temp ? t('history.record.medTemp', { temp: record.temp }) : '')
       }
     case 'cough':
       return {
         icon: '🫁',
         iconBg: 'bg-yellow-100',
-        main: `咳嗽 - ${record.level}`,
+        main: t('history.record.coughMain', { level: record.level }),
         sub: record.note || ''
       }
     case 'temp':
       return {
         icon: '🌡️',
         iconBg: 'bg-red-100',
-        main: `体温 ${record.value}°`,
-        sub: record.value >= 38.5 ? '发热' : (record.value >= 37.3 ? '低热' : '正常')
+        main: t('history.record.tempMain', { value: record.value }),
+        sub: record.value >= 38.5 ? t('history.record.tempStatus.fever') : (record.value >= 37.3 ? t('history.record.tempStatus.lowFever') : t('history.record.tempStatus.normal'))
       }
     case 'note':
       return {
         icon: '📝',
         iconBg: 'bg-blue-100',
-        main: '备注',
+        main: t('history.record.note'),
         sub: record.content
       }
     default:
-      return { icon: '📋', iconBg: 'bg-gray-100', main: '记录', sub: '' }
+      return { icon: '📋', iconBg: 'bg-gray-100', main: t('history.record.default'), sub: '' }
   }
 }
 
-const deleteRecord = (index) => {
-  if (confirm('确定删除这条记录吗？')) {
-    store.deleteRecord(index)
-    toast('已删除')
+const canDeleteRecord = (record) => {
+  if (store.isOwner) return true
+  if (!store.user) return false
+  return record.createdByUserId === store.user.id
+}
+
+const deleteRecord = (recordId) => {
+  if (!recordId) return
+  if (confirm(t('confirm.deleteRecord'))) {
+    store.deleteRecordById(recordId)
+    toast(t('toast.deleted'))
   }
 }
 </script>
@@ -78,33 +87,38 @@ const deleteRecord = (index) => {
 <template>
   <div class="card">
     <div class="flex justify-between items-center mb-4">
-      <span class="font-semibold text-gray-800">📋 记录历史</span>
+      <span class="font-semibold text-gray-800">{{ t('history.title') }}</span>
       <div class="flex gap-2">
         <button
           v-for="filter in filters"
           :key="filter.key"
-          @click="currentFilter = filter.key"
           class="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
           :class="currentFilter === filter.key 
             ? 'bg-dabo text-white' 
             : 'bg-warm-50 text-gray-500'"
+          @click="currentFilter = filter.key"
         >
-          {{ filter.label }}
+          {{ t(`history.filter.${filter.key}`) }}
         </button>
       </div>
     </div>
 
     <div class="max-h-96 overflow-y-auto -mx-5 px-5">
       <!-- 空状态 -->
-      <div v-if="filteredRecords.length === 0" class="text-center py-10 text-gray-400">
-        <div class="text-4xl mb-3">📝</div>
-        <div>暂无记录</div>
+      <div
+        v-if="filteredRecords.length === 0"
+        class="text-center py-10 text-gray-400"
+      >
+        <div class="text-4xl mb-3">
+          📝
+        </div>
+        <div>{{ t('history.empty') }}</div>
       </div>
 
       <!-- 记录列表 -->
       <div
-        v-for="(record, index) in filteredRecords"
-        :key="record.time + record.type"
+        v-for="record in filteredRecords"
+        :key="record.id || (record.time + record.type)"
         class="flex items-start py-3.5 border-b border-gray-100 last:border-0"
       >
         <div 
@@ -129,8 +143,9 @@ const deleteRecord = (index) => {
         </div>
 
         <button 
-          @click="deleteRecord(index)"
+          v-if="canDeleteRecord(record)"
           class="ml-2 px-2 py-1 text-gray-300 hover:text-red-500 transition-colors"
+          @click="deleteRecord(record.id)"
         >
           ×
         </button>

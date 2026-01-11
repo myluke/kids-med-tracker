@@ -1,11 +1,13 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRecordsStore } from '@/stores/records'
 import ChildTabs from '@/components/ChildTabs.vue'
 import TempChart from '@/components/TempChart.vue'
 import CoughChart from '@/components/CoughChart.vue'
 
 const store = useRecordsStore()
+const { t } = useI18n()
 
 const recoveryStats = computed(() => store.getRecoveryStats())
 </script>
@@ -18,7 +20,9 @@ const recoveryStats = computed(() => store.getRecoveryStats())
     <!-- 体温趋势 -->
     <div class="card">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="font-semibold text-gray-800">🌡️ 体温趋势（近24小时）</h3>
+        <h3 class="font-semibold text-gray-800">
+          {{ t('stats.tempTrend24h') }}
+        </h3>
       </div>
       <TempChart />
     </div>
@@ -26,7 +30,9 @@ const recoveryStats = computed(() => store.getRecoveryStats())
     <!-- 咳嗽频次 -->
     <div class="card">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="font-semibold text-gray-800">🫁 咳嗽频次（近3天）</h3>
+        <h3 class="font-semibold text-gray-800">
+          {{ t('stats.coughTrend3d') }}
+        </h3>
       </div>
       <CoughChart />
     </div>
@@ -34,17 +40,19 @@ const recoveryStats = computed(() => store.getRecoveryStats())
     <!-- 康复统计 -->
     <div class="card">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="font-semibold text-gray-800">📊 康复统计</h3>
+        <h3 class="font-semibold text-gray-800">
+          {{ t('stats.recovery') }}
+        </h3>
       </div>
       <div class="space-y-2 text-gray-600">
         <p>
-          记录天数：<strong class="text-gray-800">{{ recoveryStats.totalDays }}</strong> 天
+          {{ t('stats.totalDays') }}：<strong class="text-gray-800">{{ recoveryStats.totalDays }}</strong> {{ t('stats.dayUnit') }}
         </p>
         <p>
-          总用药次数：<strong class="text-gray-800">{{ recoveryStats.totalMeds }}</strong> 次
+          {{ t('stats.totalMeds') }}：<strong class="text-gray-800">{{ recoveryStats.totalMeds }}</strong> {{ t('stats.timesUnit') }}
         </p>
         <p>
-          平均每日咳嗽：<strong class="text-gray-800">{{ recoveryStats.avgCough }}</strong> 次
+          {{ t('stats.avgCough') }}：<strong class="text-gray-800">{{ recoveryStats.avgCough }}</strong> {{ t('stats.timesUnit') }}
         </p>
       </div>
     </div>

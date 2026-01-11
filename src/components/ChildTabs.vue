@@ -1,15 +1,16 @@
 <script setup>
-import { useRecordsStore, children } from '@/stores/records'
+import { useI18n } from 'vue-i18n'
+import { useRecordsStore } from '@/stores/records'
 
 const store = useRecordsStore()
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="flex gap-3">
     <button
-      v-for="child in children"
+      v-for="child in store.children"
       :key="child.id"
-      @click="store.switchChild(child.id)"
       class="flex-1 p-4 rounded-xl border-3 transition-all text-center relative overflow-hidden"
       :class="[
         store.currentChild === child.id 
@@ -21,6 +22,7 @@ const store = useRecordsStore()
         borderColor: child.color,
         boxShadow: `0 4px 15px ${child.color}40`
       } : {}"
+      @click="store.switchChild(child.id)"
     >
       <div 
         class="w-12 h-12 rounded-full flex items-center justify-center text-2xl mx-auto mb-2"
@@ -28,8 +30,12 @@ const store = useRecordsStore()
       >
         {{ child.emoji }}
       </div>
-      <div class="font-semibold text-gray-800">{{ child.name }}</div>
-      <div class="text-xs text-gray-500">{{ child.age }} · {{ child.gender === 'boy' ? '男孩' : '女孩' }}</div>
+      <div class="font-semibold text-gray-800">
+        {{ child.name }}
+      </div>
+      <div class="text-xs text-gray-500">
+        {{ child.age }} · {{ child.gender === 'boy' ? t('child.boy') : t('child.girl') }}
+      </div>
     </button>
   </div>
 </template>

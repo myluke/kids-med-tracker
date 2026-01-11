@@ -1,0 +1,16 @@
+# Wrangler 本地/预览环境变量（不提交到仓库）
+# 使用方式：复制为 .dev.vars（该文件已被 .gitignore 忽略）
+
+# local / preview / production
+ENV=local
+
+# Cloudflare Access
+ACCESS_AUD=
+ACCESS_ISS=
+
+# Turnstile
+TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
+
+# 邀请链接 token pepper（建议随机一串）
+INVITE_TOKEN_PEPPER=

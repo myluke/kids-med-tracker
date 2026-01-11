@@ -7,22 +7,36 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix"
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix",
+    "worker:dev": "wrangler dev --local --port 8787",
+    "worker:deploy": "wrangler deploy"
   },
   "dependencies": {
     "chart.js": "^4.4.1",
+    "hono": "^4.11.3",
+    "jose": "^6.1.3",
     "pinia": "^2.1.7",
     "vue": "^3.4.15",
     "vue-chartjs": "^5.3.0",
-    "vue-router": "^4.2.5"
+    "vue-i18n": "^11.2.8",
+    "vue-router": "^4.2.5",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260111.0",
+    "@eslint/js": "^9.39.2",
     "@vitejs/plugin-vue": "^5.0.3",
     "autoprefixer": "^10.4.17",
+    "eslint": "^9.39.2",
+    "eslint-plugin-vue": "^10.6.2",
+    "globals": "^17.0.0",
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
+    "typescript": "^5.9.3",
     "vite": "^5.0.12",
-    "vite-plugin-pwa": "^0.17.5"
+    "vite-plugin-pwa": "^0.17.5",
+    "vue-eslint-parser": "^10.2.0",
+    "wrangler": "^4.58.0"
   },
   "keywords": [
     "kids",
@@ -35,10 +49,10 @@
     "tailwindcss",
     "pwa"
   ],
-  "author": "",
+  "author": "Luke",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/kids-med-tracker.git"
+    "url": "https://github.com/myluke/kids-med-tracker.git"
   }
 }

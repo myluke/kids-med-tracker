@@ -1,29 +1,6 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 
-// 孩子配置 - 可自定义
-export const children = [
-  { 
-    id: 'child1', 
-    name: '大宝', 
-    age: '8岁', 
-    gender: 'boy',
-    emoji: '👦',
-    color: '#4A90D9',
-    lightColor: '#E8F2FC'
-  },
-  { 
-    id: 'child2', 
-    name: '二宝', 
-    age: '2岁', 
-    gender: 'girl',
-    emoji: '👧',
-    color: '#E85D75',
-    lightColor: '#FDE8EC'
-  }
-]
-
-// 预设药物
 export const medications = [
   { name: '布洛芬', icon: '🔥', isFeverMed: true, interval: 6 },
   { name: '对乙酰氨基酚', icon: '💧', isFeverMed: true, interval: 4 },
@@ -33,156 +10,387 @@ export const medications = [
   { name: '其他', icon: '➕', isFeverMed: false, interval: 0 }
 ]
 
-// 退烧药名单
 export const feverMeds = medications.filter(m => m.isFeverMed).map(m => m.name)
 
-// 存储键名
-const STORAGE_KEY = 'kids-med-tracker'
-
-export const useRecordsStore = defineStore('records', () => {
-  // 当前选中的孩子
-  const currentChild = ref('child1')
-
-  // 所有记录数据
-  const records = ref({})
-
-  // 初始化数据
-  const initData = () => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      try {
-        records.value = JSON.parse(stored)
-      } catch (e) {
-        records.value = {}
-      }
-    }
-    // 确保每个孩子都有记录数组
-    children.forEach(child => {
-      if (!records.value[child.id]) {
-        records.value[child.id] = []
-      }
+async function apiFetch(path, { method = 'GET', json, query, headers } = {}) {
+  const url = new URL(path, window.location.origin)
+  if (query) {
+    Object.entries(query).forEach(([k, v]) => {
+      if (v === undefined || v === null || v === '') return
+      url.searchParams.set(k, String(v))
     })
   }
 
-  // 保存数据到localStorage
-  const saveData = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(records.value))
+  const devUserEmail = import.meta.env.VITE_DEV_USER_EMAIL
+  const requestHeaders = {
+    ...(json ? { 'Content-Type': 'application/json' } : {}),
+    ...(devUserEmail ? { 'X-Dev-User': devUserEmail } : {}),
+    ...(headers || {})
   }
 
-  // 监听变化自动保存
-  watch(records, saveData, { deep: true })
-
-  // 初始化
-  initData()
-
-  // 当前孩子的记录
-  const currentRecords = computed(() => {
-    return records.value[currentChild.value] || []
+  const res = await fetch(url.toString(), {
+    method,
+    headers: requestHeaders,
+    body: json ? JSON.stringify(json) : undefined
   })
 
-  // 切换孩子
-  const switchChild = (childId) => {
-    currentChild.value = childId
+  const contentType = res.headers.get('content-type') || ''
+  const isJson = contentType.includes('application/json')
+  const data = isJson ? await res.json() : await res.text()
+
+  if (!res.ok) {
+    if (isJson && data && data.error) {
+      const message = data.error.message || data.error.code || 'Request failed'
+      throw new Error(message)
+    }
+    throw new Error(typeof data === 'string' ? data : 'Request failed')
   }
 
-  // 添加用药记录
-  const addMedRecord = (drug, dosage, temp = null) => {
-    records.value[currentChild.value].push({
-      type: 'med',
-      drug,
-      dosage,
-      temp,
-      time: new Date().toISOString()
-    })
+  if (isJson && data && data.ok === false) {
+    throw new Error(data.error?.message || 'Request failed')
   }
 
-  // 添加咳嗽记录
-  const addCoughRecord = (level, note = '') => {
-    records.value[currentChild.value].push({
-      type: 'cough',
-      level,
-      note,
-      time: new Date().toISOString()
-    })
-  }
+  return isJson && data && data.ok === true ? data.data : data
+}
 
-  // 添加体温记录
-  const addTempRecord = (value) => {
-    records.value[currentChild.value].push({
-      type: 'temp',
-      value,
-      time: new Date().toISOString()
-    })
+function safeJsonParse(value) {
+  try {
+    return JSON.parse(value)
+  } catch {
+    return null
   }
+}
 
-  // 添加备注
-  const addNote = (content) => {
-    records.value[currentChild.value].push({
-      type: 'note',
-      content,
-      time: new Date().toISOString()
-    })
-  }
+function clampByte(n) {
+  return Math.max(0, Math.min(255, n))
+}
 
-  // 删除记录
-  const deleteRecord = (index) => {
-    const sorted = [...currentRecords.value].sort((a, b) => 
-      new Date(b.time) - new Date(a.time)
-    )
-    const target = sorted[index]
-    const originalIndex = records.value[currentChild.value].findIndex(
-      r => r.time === target.time && r.type === target.type
-    )
-    if (originalIndex !== -1) {
-      records.value[currentChild.value].splice(originalIndex, 1)
+function hexToRgb(hex) {
+  const value = hex.replace('#', '').trim()
+  if (value.length !== 6) return null
+  const r = parseInt(value.slice(0, 2), 16)
+  const g = parseInt(value.slice(2, 4), 16)
+  const b = parseInt(value.slice(4, 6), 16)
+  if ([r, g, b].some(Number.isNaN)) return null
+  return { r, g, b }
+}
+
+function rgbToHex({ r, g, b }) {
+  return (
+    '#' +
+    clampByte(r).toString(16).padStart(2, '0') +
+    clampByte(g).toString(16).padStart(2, '0') +
+    clampByte(b).toString(16).padStart(2, '0')
+  )
+}
+
+function lightenHex(hex, ratio = 0.85) {
+  const rgb = hexToRgb(hex)
+  if (!rgb) return '#FFFFFF'
+  return rgbToHex({
+    r: Math.round(rgb.r + (255 - rgb.r) * ratio),
+    g: Math.round(rgb.g + (255 - rgb.g) * ratio),
+    b: Math.round(rgb.b + (255 - rgb.b) * ratio)
+  })
+}
+
+export const useRecordsStore = defineStore('records', () => {
+  const user = ref(null)
+  const families = ref([])
+  const currentFamilyId = ref(null)
+
+  const children = ref([])
+  const currentChild = ref(null)
+
+  const recordsByChild = ref({})
+
+  const loading = ref({
+    bootstrap: false
+  })
+
+  const error = ref(null)
+
+  const currentFamilyRole = computed(() => {
+    if (!currentFamilyId.value) return null
+    const family = families.value.find(f => f.id === currentFamilyId.value)
+    return family?.role || null
+  })
+
+  const isOwner = computed(() => currentFamilyRole.value === 'owner')
+
+  const currentRecords = computed(() => {
+    if (!currentChild.value) return []
+    return recordsByChild.value[currentChild.value] || []
+  })
+
+  const bootstrap = async () => {
+    if (loading.value.bootstrap) return
+    loading.value.bootstrap = true
+
+    try {
+      error.value = null
+
+      const me = await apiFetch('/api/auth/me')
+      user.value = me.user
+      families.value = me.families || []
+
+      if (!currentFamilyId.value && families.value.length > 0) {
+        currentFamilyId.value = families.value[0].id
+      }
+
+      if (currentFamilyId.value) {
+        await loadChildren(currentFamilyId.value)
+      }
+
+      if (!currentChild.value && children.value.length > 0) {
+        currentChild.value = children.value[0].id
+      }
+
+      if (currentFamilyId.value && currentChild.value) {
+        await loadRecords({
+          familyId: currentFamilyId.value,
+          childId: currentChild.value
+        })
+      }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
+    } finally {
+      loading.value.bootstrap = false
     }
   }
 
-  // 获取最近的退烧药记录
+  const setFamily = async (familyId) => {
+    currentFamilyId.value = familyId
+    children.value = []
+    currentChild.value = null
+    recordsByChild.value = {}
+
+    await loadChildren(familyId)
+
+    if (children.value.length > 0) {
+      currentChild.value = children.value[0].id
+      await loadRecords({ familyId, childId: currentChild.value })
+    }
+  }
+
+
+  const loadChildren = async (familyId) => {
+    const result = await apiFetch('/api/children', {
+      query: { familyId }
+    })
+
+    const list = Array.isArray(result) ? result : []
+    children.value = list.map(c => ({
+      ...c,
+      lightColor: c.lightColor || lightenHex(c.color || '#4A90D9')
+    }))
+  }
+
+  const createChild = async ({ name, emoji, color }) => {
+    if (!currentFamilyId.value) throw new Error('Missing family')
+
+    const child = await apiFetch('/api/children', {
+      method: 'POST',
+      json: {
+        familyId: currentFamilyId.value,
+        name,
+        emoji,
+        color
+      }
+    })
+
+    await loadChildren(currentFamilyId.value)
+
+    if (!currentChild.value && child?.id) {
+      currentChild.value = child.id
+    }
+
+    return child
+  }
+
+  const loadRecords = async ({ familyId, childId, since, limit } = {}) => {
+    const result = await apiFetch('/api/records', {
+      query: { familyId, childId, since, limit }
+    })
+
+    const rows = Array.isArray(result) ? result : []
+    const normalized = rows.map(row => {
+      const payload = typeof row.payloadJson === 'string' ? safeJsonParse(row.payloadJson) : row.payload
+      return {
+        id: row.id,
+        type: row.type,
+        time: row.time,
+        createdByUserId: row.createdByUserId,
+        ...(payload || {})
+      }
+    })
+
+    recordsByChild.value = {
+      ...recordsByChild.value,
+      [childId]: normalized
+    }
+
+    return normalized
+  }
+
+  const createFamily = async ({ name, turnstileToken }) => {
+    const family = await apiFetch('/api/families', {
+      method: 'POST',
+      json: {
+        name,
+        turnstileToken
+      }
+    })
+
+    await bootstrap()
+
+    if (family?.id) {
+      await setFamily(family.id)
+    }
+
+    return family
+  }
+
+  const createInvite = async ({ familyId }) => {
+    return apiFetch('/api/invites', {
+      method: 'POST',
+      json: { familyId }
+    })
+  }
+
+  const acceptInvite = async ({ token, turnstileToken }) => {
+    const res = await apiFetch('/api/invites/accept', {
+      method: 'POST',
+      json: { token, turnstileToken }
+    })
+
+    await bootstrap()
+    if (res?.familyId) {
+      await setFamily(res.familyId)
+    }
+
+    return res
+  }
+
+  const switchChild = async (childId) => {
+    currentChild.value = childId
+
+    if (!currentFamilyId.value) return
+
+    if (!recordsByChild.value[childId]) {
+      await loadRecords({ familyId: currentFamilyId.value, childId })
+    }
+  }
+
+  const addRecord = async (type, payload) => {
+    if (!currentFamilyId.value || !currentChild.value) {
+      throw new Error('Missing family or child')
+    }
+
+    const now = new Date().toISOString()
+
+    const created = await apiFetch('/api/records', {
+      method: 'POST',
+      json: {
+        familyId: currentFamilyId.value,
+        childId: currentChild.value,
+        type,
+        time: now,
+        payload
+      }
+    })
+
+    const localRecord = {
+      id: created.id,
+      type,
+      time: now,
+      createdByUserId: user.value?.id,
+      ...(payload || {})
+    }
+
+    recordsByChild.value = {
+      ...recordsByChild.value,
+      [currentChild.value]: [localRecord, ...(recordsByChild.value[currentChild.value] || [])]
+    }
+
+    return localRecord
+  }
+
+  const addMedRecord = (drug, dosage, temp = null) => {
+    return addRecord('med', { drug, dosage, temp })
+  }
+
+  const addCoughRecord = (level, note = '') => {
+    return addRecord('cough', { level, note })
+  }
+
+  const addTempRecord = (value) => {
+    return addRecord('temp', { value })
+  }
+
+  const addNote = (content) => {
+    return addRecord('note', { content })
+  }
+
+  const deleteRecordById = async (recordId) => {
+    if (!currentFamilyId.value) throw new Error('Missing family')
+
+    await apiFetch(`/api/records/${recordId}`, {
+      method: 'DELETE',
+      query: { familyId: currentFamilyId.value }
+    })
+
+    const childId = currentChild.value
+    if (!childId) return
+
+    recordsByChild.value = {
+      ...recordsByChild.value,
+      [childId]: (recordsByChild.value[childId] || []).filter(r => r.id !== recordId)
+    }
+  }
+
   const lastFeverMed = computed(() => {
     return currentRecords.value
       .filter(r => r.type === 'med' && feverMeds.includes(r.drug))
       .sort((a, b) => new Date(b.time) - new Date(a.time))[0] || null
   })
 
-  // 计算距上次退烧药的时间（毫秒）
   const timeSinceLastFeverMed = computed(() => {
     if (!lastFeverMed.value) return null
     return Date.now() - new Date(lastFeverMed.value.time).getTime()
   })
 
-  // 今日统计
   const todayStats = computed(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
+
     const todayRecords = currentRecords.value.filter(
       r => new Date(r.time) >= today
     )
 
     const medCount = todayRecords.filter(r => r.type === 'med').length
     const coughCount = todayRecords.filter(r => r.type === 'cough').length
-    
-    // 最近体温
+
     const tempRecords = currentRecords.value
       .filter(r => r.type === 'temp' || (r.type === 'med' && r.temp))
       .sort((a, b) => new Date(b.time) - new Date(a.time))
-    
-    const lastTemp = tempRecords.length > 0 
-      ? (tempRecords[0].temp || tempRecords[0].value) 
+
+    const lastTemp = tempRecords.length > 0
+      ? (tempRecords[0].temp || tempRecords[0].value)
       : null
 
     return { medCount, coughCount, lastTemp }
   })
 
-  // 导出记录为文本
-  const exportRecords = () => {
-    let report = '=== 宝贝康复记录 ===\n'
-    report += `导出时间：${new Date().toLocaleString('zh-CN')}\n\n`
+  const exportRecords = ({ locale = 'zh-CN', t } = {}) => {
+    if (typeof t !== 'function') return ''
 
-    children.forEach(child => {
-      const childRecords = records.value[child.id] || []
-      const sorted = [...childRecords].sort((a, b) => 
+    let report = `=== ${t('export.reportTitle')} ===\n`
+    report += `${t('export.exportedAt')}: ${new Date().toLocaleString(locale)}\n\n`
+
+    children.value.forEach(child => {
+      const childRecords = recordsByChild.value[child.id] || []
+      const sorted = [...childRecords].sort((a, b) =>
         new Date(b.time) - new Date(a.time)
       )
 
@@ -190,15 +398,16 @@ export const useRecordsStore = defineStore('records', () => {
       report += '-'.repeat(30) + '\n'
 
       sorted.forEach(r => {
-        const time = new Date(r.time).toLocaleString('zh-CN')
+        const time = new Date(r.time).toLocaleString(locale)
         if (r.type === 'med') {
-          report += `${time} | 用药：${r.drug} ${r.dosage}${r.temp ? ' 体温' + r.temp + '°' : ''}\n`
+          const tempPart = r.temp ? t('export.tempInline', { temp: r.temp }) : ''
+          report += `${time} | ${t('export.med')}: ${r.drug} ${r.dosage}${tempPart}\n`
         } else if (r.type === 'cough') {
-          report += `${time} | 咳嗽：${r.level}${r.note ? ' (' + r.note + ')' : ''}\n`
+          report += `${time} | ${t('export.cough')}: ${r.level}${r.note ? ' (' + r.note + ')' : ''}\n`
         } else if (r.type === 'temp') {
-          report += `${time} | 体温：${r.value}°\n`
+          report += `${time} | ${t('export.temp')}: ${r.value}°\n`
         } else if (r.type === 'note') {
-          report += `${time} | 备注：${r.content}\n`
+          report += `${time} | ${t('export.note')}: ${r.content}\n`
         }
       })
       report += '\n'
@@ -207,11 +416,10 @@ export const useRecordsStore = defineStore('records', () => {
     return report
   }
 
-  // 获取体温数据（用于图表）
   const getTempData = (hours = 24) => {
     const cutoff = Date.now() - hours * 60 * 60 * 1000
     return currentRecords.value
-      .filter(r => (r.type === 'temp' || (r.type === 'med' && r.temp)) && 
+      .filter(r => (r.type === 'temp' || (r.type === 'med' && r.temp)) &&
                    new Date(r.time).getTime() >= cutoff)
       .map(r => ({
         time: new Date(r.time),
@@ -220,8 +428,9 @@ export const useRecordsStore = defineStore('records', () => {
       .sort((a, b) => a.time - b.time)
   }
 
-  // 获取咳嗽数据（用于图表）
-  const getCoughData = (days = 3) => {
+  const getCoughData = (days = 3, t) => {
+    const translate = typeof t === 'function' ? t : (key) => key
+
     const result = []
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date()
@@ -231,27 +440,28 @@ export const useRecordsStore = defineStore('records', () => {
       nextDate.setDate(nextDate.getDate() + 1)
 
       const count = currentRecords.value.filter(
-        r => r.type === 'cough' && 
-             new Date(r.time) >= date && 
+        r => r.type === 'cough' &&
+             new Date(r.time) >= date &&
              new Date(r.time) < nextDate
       ).length
 
+      const labelKey = i === 0 ? 'common.today' : (i === 1 ? 'common.yesterday' : 'common.dayBeforeYesterday')
+
       result.push({
-        label: i === 0 ? '今天' : (i === 1 ? '昨天' : '前天'),
+        label: translate(labelKey),
         count
       })
     }
     return result
   }
 
-  // 获取康复统计
   const getRecoveryStats = () => {
     const allRecords = currentRecords.value
     if (allRecords.length === 0) {
       return { totalDays: 0, totalMeds: 0, avgCough: 0 }
     }
 
-    const dates = new Set(allRecords.map(r => 
+    const dates = new Set(allRecords.map(r =>
       new Date(r.time).toDateString()
     ))
     const totalDays = dates.size
@@ -262,24 +472,42 @@ export const useRecordsStore = defineStore('records', () => {
     return { totalDays, totalMeds, avgCough }
   }
 
+  bootstrap()
+
   return {
-    // State
+    user,
+    families,
+    currentFamilyId,
+    currentFamilyRole,
+    isOwner,
+    children,
     currentChild,
-    records,
-    
-    // Getters
+
+    loading,
+    error,
+
     currentRecords,
     lastFeverMed,
     timeSinceLastFeverMed,
     todayStats,
-    
-    // Actions
+
+    bootstrap,
+    setFamily,
+    createFamily,
+    createInvite,
+    acceptInvite,
+
     switchChild,
+    loadChildren,
+    createChild,
+    loadRecords,
+
     addMedRecord,
     addCoughRecord,
     addTempRecord,
     addNote,
-    deleteRecord,
+    deleteRecordById,
+
     exportRecords,
     getTempData,
     getCoughData,

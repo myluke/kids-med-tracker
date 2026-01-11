@@ -1,9 +1,11 @@
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const emit = defineEmits(['close', 'submit'])
 
 const note = ref('')
+const { t } = useI18n()
 
 const coughLevels = [
   { level: '轻微', icon: '😊', color: 'green' },
@@ -23,8 +25,13 @@ const submit = (level) => {
 <template>
   <div class="panel">
     <div class="flex justify-between items-center mb-4">
-      <span class="font-semibold text-gray-800">🫁 记录咳嗽</span>
-      <button @click="emit('close')" class="text-2xl text-gray-400 p-1">×</button>
+      <span class="font-semibold text-gray-800">{{ t('panels.cough.title') }}</span>
+      <button
+        class="text-2xl text-gray-400 p-1"
+        @click="emit('close')"
+      >
+        ×
+      </button>
     </div>
 
     <!-- 咳嗽程度选择 -->
@@ -32,7 +39,6 @@ const submit = (level) => {
       <button
         v-for="item in coughLevels"
         :key="item.level"
-        @click="submit(item.level)"
         class="flex-1 py-5 border-2 rounded-xl text-center transition-all active:scale-95"
         :class="{
           'border-gray-200 bg-white': true,
@@ -40,19 +46,24 @@ const submit = (level) => {
           'active:border-yellow-400 active:bg-yellow-50': item.color === 'yellow',
           'active:border-red-400 active:bg-red-50': item.color === 'red'
         }"
+        @click="submit(item.level)"
       >
-        <div class="text-3xl mb-2">{{ item.icon }}</div>
-        <div class="text-sm font-medium">{{ item.level }}</div>
+        <div class="text-3xl mb-2">
+          {{ item.icon }}
+        </div>
+        <div class="text-sm font-medium">
+          {{ item.level }}
+        </div>
       </button>
     </div>
 
     <!-- 备注 -->
     <div>
-      <label class="block text-xs text-gray-500 mb-1.5">备注（可选）</label>
+      <label class="block text-xs text-gray-500 mb-1.5">{{ t('panels.cough.noteLabel') }}</label>
       <input 
         v-model="note"
         type="text" 
-        placeholder="如：睡前咳嗽加重"
+        :placeholder="t('panels.cough.notePlaceholder')"
         class="input-field"
       >
     </div>

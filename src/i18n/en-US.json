@@ -1,0 +1,169 @@
+{
+  "app": {
+    "title": "Kids Recovery Assistant",
+    "subtitle": "Track meds · symptoms · care"
+  },
+  "nav": {
+    "home": "Home",
+    "stats": "Stats",
+    "export": "Export"
+  },
+  "common": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "dayBeforeYesterday": "2 days ago",
+    "notFilled": "Not provided",
+    "working": "Working…"
+  },
+  "toast": {
+    "exported": "✓ Exported",
+    "deleted": "Deleted",
+    "noteAdded": "✓ Note added",
+    "medRecorded": "✓ Recorded {drug}",
+    "coughRecorded": "✓ Recorded cough - {level}",
+    "tempRecorded": "✓ Recorded temperature {value}°",
+    "childAdded": "✓ Added child {name}"
+  },
+  "confirm": {
+    "deleteRecord": "Delete this record?"
+  },
+  "prompt": {
+    "quickNote": "Quick note:",
+    "childName": "Enter child name:"
+  },
+  "stats": {
+    "tempTrend24h": "🌡️ Temperature trend (24h)",
+    "coughTrend3d": "🫁 Cough count (3 days)",
+    "recovery": "📊 Recovery stats",
+    "totalDays": "Days tracked",
+    "totalMeds": "Total meds",
+    "avgCough": "Avg cough/day",
+    "dayUnit": "days",
+    "timesUnit": "times"
+  },
+  "todayStats": {
+    "med": "Meds today",
+    "cough": "Coughs",
+    "temp": "Latest temp"
+  },
+  "history": {
+    "title": "📋 History",
+    "empty": "No records",
+    "filter": {
+      "all": "All",
+      "med": "Meds",
+      "cough": "Cough"
+    },
+    "record": {
+      "medTemp": " · Temp {temp}°",
+      "coughMain": "Cough - {level}",
+      "tempMain": "Temp {value}°",
+      "tempStatus": {
+        "fever": "Fever",
+        "lowFever": "Low fever",
+        "normal": "Normal"
+      },
+      "note": "Note",
+      "default": "Record"
+    }
+  },
+  "panels": {
+    "med": {
+      "title": "💊 Record medication",
+      "doseLabel": "Dose",
+      "dosePlaceholder": "e.g. 5ml / 1 tablet",
+      "tempLabel": "Current temp (optional)"
+    },
+    "cough": {
+      "title": "🫁 Record cough",
+      "noteLabel": "Note (optional)",
+      "notePlaceholder": "e.g. Worse before sleep"
+    },
+    "temp": {
+      "title": "🌡️ Record temperature",
+      "preciseLabel": "Exact temperature"
+    },
+    "submit": "✓ Confirm"
+  },
+  "quickActions": {
+    "med": "Medication",
+    "cough": "Cough",
+    "temp": "Temperature",
+    "note": "Quick note"
+  },
+  "alerts": {
+    "selectDrug": "Please select a medication",
+    "enterTemp": "Please enter a temperature"
+  },
+  "timer": {
+    "title": "💊 Fever med status",
+    "noRecord": "No fever-med record",
+    "canTake": "OK to take",
+    "optional": "Optional",
+    "wait": "Wait",
+    "sinceLast": "Since last {drug}",
+    "needWait": "Wait about {hours}h {mins}m"
+  },
+  "chart": {
+    "temp": {
+      "label": "Temperature",
+      "empty": "No temperature data"
+    },
+    "cough": {
+      "label": "Cough count",
+      "times": "{count} times"
+    }
+  },
+  "child": {
+    "boy": "Boy",
+    "girl": "Girl"
+  },
+  "export": {
+    "filePrefix": "Recovery_Records",
+    "reportTitle": "Recovery Records",
+    "exportedAt": "Exported at",
+    "med": "Medication",
+    "cough": "Cough",
+    "temp": "Temperature",
+    "note": "Note",
+    "tempInline": " Temp {temp}°"
+  },
+  "turnstile": {
+    "missingSiteKey": "Turnstile site key is not configured",
+    "unavailable": "Turnstile is unavailable. You can enter a token manually.",
+    "hint": "Complete verification to continue",
+    "manualTokenPlaceholder": "Enter Turnstile token (use dev locally)"
+  },
+  "views": {
+    "noFamily": {
+      "title": "You are not in a family yet",
+      "subtitle": "Join a family to start tracking and sharing.",
+      "bullets": {
+        "trackTogether": "Collaborate on the same data",
+        "invites": "Join via a one-time invite link",
+        "privacy": "Only family members can access"
+      },
+      "createTitle": "Create a family",
+      "createSubtitle": "You will become the owner.",
+      "familyNameLabel": "Family name",
+      "familyNamePlaceholder": "e.g. Our family",
+      "createButton": "Create and continue",
+      "backToHome": "Back to home"
+    },
+    "invite": {
+      "title": "Accept invite",
+      "subtitle": "Verify to join the family.",
+      "tokenLabel": "Invite code",
+      "tokenPreviewEmpty": "N/A",
+      "missingToken": "Missing invite code",
+      "verifyTitle": "Security check",
+      "verifySubtitle": "Complete Turnstile verification to accept the invite.",
+      "acceptButton": "Accept",
+      "success": "Joined",
+      "backToHome": "Back to home"
+    }
+  }
+}

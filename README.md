@@ -55,7 +55,8 @@
 - **零思考录入**：一次点击完成记录，不需要打字
 - **防混淆设计**：孩子间视觉强区分
 - **极简操作**：为睡眠不足的父母设计
-- **数据本地化**：所有数据存储在本地，保护隐私
+- **家庭协作**：同一家庭多成员共享记录
+- **隐私优先**：通过 Cloudflare Access 登录访问，数据隔离到家庭
 
 ## 🚀 快速开始
 
@@ -66,6 +67,8 @@
 
 ### 本地开发
 
+> 本项目现为 **Cloudflare Worker 托管前端静态资源 + API**。本地建议用 Worker 方式启动（与线上一致）。
+
 ```bash
 # 克隆项目
 git clone https://github.com/your-username/kids-med-tracker.git
@@ -74,77 +77,83 @@ cd kids-med-tracker
 # 安装依赖
 pnpm install
 
-# 启动开发服务器
-pnpm dev
+# 前端环境变量（复制模板即可）
+cp .env.example .env.local
 
-# 构建生产版本
+# Worker 本地变量（复制模板即可）
+cp .dev.vars.example .dev.vars
+
+# 构建前端静态资源（dist）
 pnpm build
 
-# 预览生产版本
-pnpm preview
+# 启动 Worker（默认端口 8787）
+pnpm worker:dev
 ```
 
-访问 http://localhost:5173 查看应用。
+访问 http://localhost:8787 查看应用。
+
+本地开发说明：
+- Worker 侧支持 `ENV=local` 时跳过 Access JWT 校验；Turnstile 在 `ENV=local` 且 token 为 `dev` 时跳过校验。
+- 你可以用 `.dev.vars`（已被 `.gitignore` 忽略）配置本地变量，例如：`ENV=local`、`INVITE_TOKEN_PEPPER=dev`、`TURNSTILE_SECRET_KEY=dev`。
 
 ## 📦 部署指南
 
-### 方式一：Cloudflare Pages（推荐）
+### Cloudflare Workers（推荐）
 
-**自动部署（推荐）**
+本项目使用 **Cloudflare Worker 托管前端静态资源 + 同域 API**，并使用 **Cloudflare D1** 存储数据。
 
-1. Fork 本仓库到你的 GitHub
-2. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)
-3. 进入 `Workers & Pages` → `Create application` → `Pages`
-4. 选择 `Connect to Git`，授权并选择你 Fork 的仓库
-5. 配置构建设置：
-   - **Framework preset**: `Vue`
-   - **Build command**: `pnpm build`
-   - **Build output directory**: `dist`
-   - **Node.js version**: `18`（在 Environment variables 中设置 `NODE_VERSION=18`）
-6. 点击 `Save and Deploy`
+#### 1) 准备 Cloudflare 资源
 
-**手动部署**
+1. 创建 D1 数据库（建议区分 prod/preview）
+2. 创建 Turnstile site（绑定你的域名）
+3. 配置 Cloudflare Zero Trust / Access（登录方式：Google + Email OTP；策略：允许任意已认证用户）
+
+#### 2) 配置 `wrangler.toml`
+
+出于安全考虑，`wrangler.toml` 默认使用占位符：
+- `[[d1_databases]]` 的 `database_id`（prod/preview）
+- `[vars]` 的 `ACCESS_AUD`、`ACCESS_ISS`、`TURNSTILE_SITE_KEY`
+
+你可以选择两种方式之一：
+- 方式 A：直接把占位符替换为你自己的值（注意不要提交到公共仓库）
+- 方式 B：保持 `wrangler.toml` 为占位符，使用 Cloudflare Dashboard / CI 环境变量管理（更推荐）
+
+#### 3) 配置 Worker secrets（不要提交到仓库）
 
 ```bash
-# 安装 Wrangler CLI
-pnpm add -g wrangler
-
 # 登录 Cloudflare
 wrangler login
 
-# 构建项目
-pnpm build
+# Turnstile（后端密钥）
+wrangler secret put TURNSTILE_SECRET_KEY
 
-# 部署到 Cloudflare Pages
-wrangler pages deploy dist --project-name=kids-med-tracker
+# 邀请链接 token pepper（建议随机生成一串）
+wrangler secret put INVITE_TOKEN_PEPPER
 ```
 
-### 方式二：Vercel
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/kids-med-tracker)
-
-或手动部署：
+#### 4) 应用 D1 migrations
 
 ```bash
-# 安装 Vercel CLI
-pnpm add -g vercel
+# 生产库
+wrangler d1 migrations apply kids-med-prod --remote
 
-# 部署
-vercel
+# 预览库（可选）
+wrangler d1 migrations apply kids-med-preview --remote
 ```
 
-### 方式三：Netlify
-
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/your-username/kids-med-tracker)
-
-### 方式四：静态托管
-
-构建后直接将 `dist` 目录部署到任何静态托管服务：
+#### 5) 构建并部署 Worker
 
 ```bash
+pnpm install
 pnpm build
-# 将 dist 目录上传到你的服务器
+pnpm worker:deploy
 ```
+
+---
+
+### 其他平台
+
+由于依赖 Cloudflare Access / D1 / Turnstile，本项目不再推荐部署到 Vercel/Netlify/纯静态托管。
 
 ## 🛠️ 技术栈
 
@@ -154,9 +163,14 @@ pnpm build
 | [Vite](https://vitejs.dev/) | 构建工具 |
 | [TailwindCSS](https://tailwindcss.com/) | CSS框架 |
 | [Pinia](https://pinia.vuejs.org/) | 状态管理 |
-| [VueUse](https://vueuse.org/) | 组合式工具库 |
+| [vue-i18n](https://vue-i18n.intlify.dev/) | 国际化（zh-CN/en-US） |
 | [Chart.js](https://www.chartjs.org/) | 图表库 |
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) | PWA支持 |
+| [Cloudflare Workers](https://developers.cloudflare.com/workers/) | 托管前端静态资源 + API |
+| [Hono](https://hono.dev/) | Worker API 路由框架 |
+| [Cloudflare D1](https://developers.cloudflare.com/d1/) | 数据库 |
+| [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/identity/) | 登录门禁（Google/Email OTP） |
+| [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) | 人机校验（防滥用） |
 
 ## 📁 项目结构
 
@@ -167,96 +181,51 @@ kids-med-tracker/
 │   └── icons/                # PWA图标
 ├── src/
 │   ├── components/           # Vue组件
-│   │   ├── ChildTabs.vue     # 孩子切换标签
-│   │   ├── MedTimer.vue      # 用药计时器
-│   │   ├── QuickActions.vue  # 快速操作按钮
-│   │   ├── MedPanel.vue      # 用药记录面板
-│   │   ├── CoughPanel.vue    # 咳嗽记录面板
-│   │   ├── TempPanel.vue     # 体温记录面板
-│   │   ├── TodayStats.vue    # 今日统计
-│   │   ├── HistoryList.vue   # 历史记录
-│   │   ├── TempChart.vue     # 体温图表
-│   │   └── CoughChart.vue    # 咳嗽图表
+│   ├── i18n/                 # 国际化资源（zh-CN/en-US）
 │   ├── stores/
-│   │   └── records.js        # Pinia状态管理
-│   ├── composables/
-│   │   └── useTimer.js       # 计时器逻辑
-│   ├── utils/
-│   │   └── export.js         # 数据导出工具
-│   ├── views/
-│   │   ├── HomeView.vue      # 首页
-│   │   └── StatsView.vue     # 统计页
+│   │   └── records.js        # Pinia（纯远程读写：/api + D1）
+│   ├── views/                # 路由页面（含 NoFamily/Invite）
 │   ├── App.vue               # 根组件
 │   ├── main.js               # 入口文件
 │   └── style.css             # 全局样式
+├── worker/
+│   ├── index.ts              # Worker 入口：assets + /api
+│   ├── routes/               # Hono API 路由
+│   ├── middleware/           # Access/Turnstile/限流
+│   └── db/migrations/        # D1 migrations
+├── wrangler.toml             # Worker + assets + D1 + vars
+├── docs/                     # 实施方案等文档
 ├── index.html
-├── vite.config.js            # Vite配置
-├── tailwind.config.js        # TailwindCSS配置
-├── postcss.config.js         # PostCSS配置
+├── vite.config.js
 ├── package.json
 └── README.md
 ```
 
 ## 🎨 自定义配置
 
-### 添加/修改孩子
+### 孩子与家庭
 
-编辑 `src/stores/records.js` 中的 `children` 配置：
+- 孩子数据已迁移到云端（Cloudflare D1）。
+- 只有 `owner` 可新增/编辑/删除孩子；`member` 只读。
 
-```javascript
-export const children = [
-  { 
-    id: 'child1', 
-    name: '大宝', 
-    age: '8岁', 
-    gender: 'boy',
-    color: '#4A90D9'  // 主题色
-  },
-  { 
-    id: 'child2', 
-    name: '二宝', 
-    age: '2岁', 
-    gender: 'girl',
-    color: '#E85D75'
-  },
-  // 添加更多孩子...
-]
-```
+### 预设药物
 
-### 添加/修改预设药物
+目前预设药物仍在前端配置（后续可迁移到 D1）：
+- `src/stores/records.js:1` 的 `medications`
 
-编辑 `src/components/MedPanel.vue` 中的 `medications` 数组：
+### 本地调试（可选）
 
-```javascript
-const medications = [
-  { name: '布洛芬', icon: '🔥', interval: 6 },      // 最小间隔小时数
-  { name: '对乙酰氨基酚', icon: '💧', interval: 4 },
-  { name: '奥司他韦', icon: '💊', interval: 12 },
-  // 添加更多药物...
-]
-```
-
-### 修改退烧药间隔规则
-
-编辑 `src/composables/useTimer.js`：
-
-```javascript
-// 退烧药名单（用于计时提醒）
-export const feverMeds = ['布洛芬', '对乙酰氨基酚']
-
-// 安全间隔（小时）
-export const safeInterval = 4   // 最短间隔
-export const fullInterval = 6   // 推荐间隔
-```
+- `.env.local`：可设置 `VITE_DEV_USER_EMAIL=you@example.com` 用于本地 `ENV=local` 注入身份
+- `.dev.vars`：可设置 `ENV=local`、`TURNSTILE_SECRET_KEY=dev`、`INVITE_TOKEN_PEPPER=dev`（不要提交）
 
 ## 🔒 隐私说明
 
-- ✅ **所有数据存储在本地浏览器**（localStorage）
-- ✅ **不收集任何用户信息**
-- ✅ **不发送任何数据到服务器**
-- ✅ **无需注册登录**
-- ✅ **完全开源可审计**
+- ✅ **数据存储在 Cloudflare D1**（云端数据库），用于家庭成员协作与多设备访问。
+- ✅ **访问受 Cloudflare Access 保护**（支持 Google 登录与邮箱验证码 OTP）。
+- ✅ **数据按家庭隔离**：登录后仍需加入某个家庭才可访问该家庭的数据。
+- ✅ **完全开源可审计**。
 
+> 重要：这是一款健康/用药记录工具，请在部署与使用时谨慎管理 Access 策略与邀请链接。
 ## 🤝 贡献指南
 
 欢迎贡献代码！请遵循以下步骤：
@@ -281,14 +250,13 @@ export const fullInterval = 6   // 推荐间隔
 ## 📋 Roadmap
 
 - [x] 基础用药记录
-- [x] 多孩子支持
 - [x] 咳嗽追踪
 - [x] 体温图表
 - [x] 数据导出
-- [ ] 多语言支持 (i18n)
-- [ ] 数据云同步（可选）
+- [x] 多语言支持 (i18n)
+- [x] 数据云端存储（Cloudflare D1）
+- [x] 家庭成员共享（角色权限）
 - [ ] 用药提醒通知
-- [ ] 家庭成员共享
 - [ ] 深色模式
 
 ## 📄 License
