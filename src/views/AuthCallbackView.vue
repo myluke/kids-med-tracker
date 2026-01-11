@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { supabase } from '@/lib/supabase'
@@ -40,25 +40,39 @@ const { t } = useI18n()
 const store = useRecordsStore()
 const error = ref('')
 
-onMounted(async () => {
-  try {
-    // Supabase 会自动从 URL hash 中解析 tokens
-    const { data, error: authError } = await supabase.auth.getSession()
+let subscription = null
+let timeoutId = null
 
-    if (authError) {
-      throw authError
+onMounted(() => {
+  // 监听认证状态变化（Supabase 会异步从 URL hash 解析 token）
+  const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      clearTimeout(timeoutId)
+      try {
+        await store.bootstrap()
+        router.replace('/')
+      } catch (err) {
+        console.error('Bootstrap error:', err)
+        error.value = err.message || t('views.authCallback.unknownError')
+      }
     }
+  })
+  subscription = data.subscription
 
-    if (data.session) {
-      await store.bootstrap()
-      router.replace('/')
-    } else {
-      // 没有 session，可能是 token 无效或已过期
+  // 超时处理：10秒后如果还没登录成功，显示错误
+  timeoutId = setTimeout(() => {
+    if (!error.value && router.currentRoute.value.name === 'auth-callback') {
       error.value = t('views.authCallback.invalidToken')
     }
-  } catch (err) {
-    console.error('Auth callback error:', err)
-    error.value = err.message || t('views.authCallback.unknownError')
+  }, 10000)
+})
+
+onUnmounted(() => {
+  if (subscription) {
+    subscription.unsubscribe()
+  }
+  if (timeoutId) {
+    clearTimeout(timeoutId)
   }
 })
 </script>

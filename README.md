@@ -56,7 +56,7 @@
 - **防混淆设计**：孩子间视觉强区分
 - **极简操作**：为睡眠不足的父母设计
 - **家庭协作**：同一家庭多成员共享记录
-- **隐私优先**：通过 Cloudflare Access 登录访问，数据隔离到家庭
+- **隐私优先**：通过 Supabase Auth 登录访问，数据隔离到家庭
 
 ## 🚀 快速开始
 
@@ -100,19 +100,17 @@ pnpm worker:dev
 
 ### Cloudflare Workers（推荐）
 
-本项目使用 **Cloudflare Worker 托管前端静态资源 + 同域 API**，并使用 **Cloudflare D1** 存储数据。
+本项目使用 **Cloudflare Worker 托管前端静态资源 + 同域 API**，并使用 **Supabase** 存储数据和认证。
 
-#### 1) 准备 Cloudflare 资源
+#### 1) 准备资源
 
-1. 创建 D1 数据库（建议区分 prod/preview）
+1. 创建 Supabase 项目（https://supabase.com）
 2. 创建 Turnstile site（绑定你的域名）
-3. 配置 Cloudflare Zero Trust / Access（登录方式：Google + Email OTP；策略：允许任意已认证用户）
 
 #### 2) 配置 `wrangler.toml`
 
 出于安全考虑，`wrangler.toml` 默认使用占位符：
-- `[[d1_databases]]` 的 `database_id`（prod/preview）
-- `[vars]` 的 `ACCESS_AUD`、`ACCESS_ISS`、`TURNSTILE_SITE_KEY`
+- `[vars]` 的 `SUPABASE_URL`、`SUPABASE_ANON_KEY`、`TURNSTILE_SITE_KEY`
 
 你可以选择两种方式之一：
 - 方式 A：直接把占位符替换为你自己的值（注意不要提交到公共仓库）
@@ -124,6 +122,9 @@ pnpm worker:dev
 # 登录 Cloudflare
 wrangler login
 
+# Supabase Service Role Key（后端密钥）
+wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+
 # Turnstile（后端密钥）
 wrangler secret put TURNSTILE_SECRET_KEY
 
@@ -131,17 +132,7 @@ wrangler secret put TURNSTILE_SECRET_KEY
 wrangler secret put INVITE_TOKEN_PEPPER
 ```
 
-#### 4) 应用 D1 migrations
-
-```bash
-# 生产库
-wrangler d1 migrations apply kids-med-prod --remote
-
-# 预览库（可选）
-wrangler d1 migrations apply kids-med-preview --remote
-```
-
-#### 5) 构建并部署 Worker
+#### 4) 构建并部署 Worker
 
 ```bash
 pnpm install
@@ -153,7 +144,7 @@ pnpm worker:deploy
 
 ### 其他平台
 
-由于依赖 Cloudflare Access / D1 / Turnstile，本项目不再推荐部署到 Vercel/Netlify/纯静态托管。
+由于依赖 Cloudflare Workers + Supabase + Turnstile，本项目不再推荐部署到 Vercel/Netlify/纯静态托管。
 
 ## 🛠️ 技术栈
 
@@ -168,8 +159,7 @@ pnpm worker:deploy
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) | PWA支持 |
 | [Cloudflare Workers](https://developers.cloudflare.com/workers/) | 托管前端静态资源 + API |
 | [Hono](https://hono.dev/) | Worker API 路由框架 |
-| [Cloudflare D1](https://developers.cloudflare.com/d1/) | 数据库 |
-| [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/identity/) | 登录门禁（Google/Email OTP） |
+| [Supabase](https://supabase.com/) | 数据库 + 认证（Email OTP） |
 | [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) | 人机校验（防滥用） |
 
 ## 📁 项目结构
@@ -183,7 +173,7 @@ kids-med-tracker/
 │   ├── components/           # Vue组件
 │   ├── i18n/                 # 国际化资源（zh-CN/en-US）
 │   ├── stores/
-│   │   └── records.js        # Pinia（纯远程读写：/api + D1）
+│   │   └── records.js        # Pinia（纯远程读写：/api + Supabase）
 │   ├── views/                # 路由页面（含 NoFamily/Invite）
 │   ├── App.vue               # 根组件
 │   ├── main.js               # 入口文件
@@ -191,9 +181,9 @@ kids-med-tracker/
 ├── worker/
 │   ├── index.ts              # Worker 入口：assets + /api
 │   ├── routes/               # Hono API 路由
-│   ├── middleware/           # Access/Turnstile/限流
-│   └── db/migrations/        # D1 migrations
-├── wrangler.toml             # Worker + assets + D1 + vars
+│   ├── middleware/           # Auth/Turnstile/限流
+│   └── lib/                  # Supabase 客户端
+├── wrangler.toml             # Worker + assets + vars
 ├── docs/                     # 实施方案等文档
 ├── index.html
 ├── vite.config.js
@@ -205,12 +195,12 @@ kids-med-tracker/
 
 ### 孩子与家庭
 
-- 孩子数据已迁移到云端（Cloudflare D1）。
+- 孩子数据存储在云端（Supabase PostgreSQL）。
 - 只有 `owner` 可新增/编辑/删除孩子；`member` 只读。
 
 ### 预设药物
 
-目前预设药物仍在前端配置（后续可迁移到 D1）：
+目前预设药物仍在前端配置（后续可迁移到 Supabase）：
 - `src/stores/records.js:1` 的 `medications`
 
 ### 本地调试（可选）
@@ -220,12 +210,12 @@ kids-med-tracker/
 
 ## 🔒 隐私说明
 
-- ✅ **数据存储在 Cloudflare D1**（云端数据库），用于家庭成员协作与多设备访问。
-- ✅ **访问受 Cloudflare Access 保护**（支持 Google 登录与邮箱验证码 OTP）。
+- ✅ **数据存储在 Supabase**（PostgreSQL 云端数据库），用于家庭成员协作与多设备访问。
+- ✅ **访问受 Supabase Auth 保护**（支持邮箱验证码 OTP 登录）。
 - ✅ **数据按家庭隔离**：登录后仍需加入某个家庭才可访问该家庭的数据。
 - ✅ **完全开源可审计**。
 
-> 重要：这是一款健康/用药记录工具，请在部署与使用时谨慎管理 Access 策略与邀请链接。
+> 重要：这是一款健康/用药记录工具，请在部署与使用时谨慎管理邀请链接。
 ## 🤝 贡献指南
 
 欢迎贡献代码！请遵循以下步骤：
@@ -254,7 +244,7 @@ kids-med-tracker/
 - [x] 体温图表
 - [x] 数据导出
 - [x] 多语言支持 (i18n)
-- [x] 数据云端存储（Cloudflare D1）
+- [x] 数据云端存储（Supabase）
 - [x] 家庭成员共享（角色权限）
 - [ ] 用药提醒通知
 - [ ] 深色模式
