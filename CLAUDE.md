@@ -32,15 +32,16 @@ pnpm lint             # ESLint 检查并自动修复
 **技术栈：** Vue 3 (Composition API) + Vite + TailwindCSS + Pinia + Chart.js
 
 **关键路径：**
-- `src/stores/records.js` - Pinia 状态管理，包含所有状态、操作和 localStorage 持久化
-- `src/views/` - 路由页面：`HomeView.vue`（主面板）、`StatsView.vue`（图表统计）
-- `src/components/` - UI 组件（面板、图表、标签页）
-- `vite.config.js` - PWA 配置，`@` 别名指向 `src/`
-- `tailwind.config.js` - 自定义主题色：大宝（蓝色）、二宝（粉色）
+- `client/` - 前端 Vue 应用
+- `worker/` - 后端 Cloudflare Worker (Hono + Supabase)
+- `client/stores/records.js` - Pinia 状态管理
+- `client/views/` - 路由页面
+- `client/components/` - UI 组件
+- `vite.config.js` - PWA 配置，`@` 别名指向 `client/`
 
 **数据流：**
-- 所有数据存储在 Pinia store → 自动持久化到 localStorage 键 `'kids-med-tracker'`
-- 记录按孩子存储：`records[childId] = [{type, time, ...data}]`
+- 前端通过 `/api/*` 调用 Worker 后端
+- Worker 使用 Supabase 进行数据存储和认证
 - 记录类型：`med`（用药）、`cough`（咳嗽）、`temp`（体温）、`note`（备注）
 
 **主题系统：** CSS 类 `.theme-erbao` 切换孩子专属配色
@@ -50,7 +51,7 @@ pnpm lint             # ESLint 检查并自动修复
 - Vue 3 单文件组件，使用 Composition API + `<script setup>`
 - 2 空格缩进、单引号、不写分号
 - 组件命名：`PascalCase.vue`；页面命名：`*View.vue`
-- 优先使用 TailwindCSS；共享样式放在 `src/style.css`
+- 优先使用 TailwindCSS；共享样式放在 `client/style.css`
 - 提交信息遵循 Conventional Commits：`feat:`、`fix:`、`docs:`
 
 ## 测试
@@ -59,9 +60,8 @@ pnpm lint             # ESLint 检查并自动修复
 
 ## 隐私约束
 
-纯前端应用 - 所有数据保存在浏览器 localStorage。除非明确要求，否则不要添加服务器通信或健康数据遥测功能。
+数据存储在 Supabase 云端数据库，按家庭隔离。访问受 Supabase Auth 保护（Email OTP 登录）。
 
 ## 自定义配置点
 
-- **孩子配置：** `src/stores/records.js` → `children` 数组
-- **药物配置：** `src/stores/records.js` → `medications` 数组（包含 `interval` 小时间隔、`isFeverMed` 退烧药标记）
+- **药物配置：** `client/stores/records.js` → `medications` 数组（包含 `interval` 小时间隔、`isFeverMed` 退烧药标记）

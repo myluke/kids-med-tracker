@@ -166,29 +166,27 @@ pnpm worker:deploy
 
 ```
 kids-med-tracker/
-├── public/
-│   ├── logo.svg              # 应用Logo
-│   └── icons/                # PWA图标
-├── src/
-│   ├── components/           # Vue组件
+├── public/                   # 静态资源
+│   ├── logo.svg              # 应用 Logo
+│   └── icons/                # PWA 图标
+├── client/                   # 前端 Vue 应用
+│   ├── components/           # Vue 组件
 │   ├── i18n/                 # 国际化资源（zh-CN/en-US）
 │   ├── stores/
-│   │   └── records.js        # Pinia（纯远程读写：/api + Supabase）
-│   ├── views/                # 路由页面（含 NoFamily/Invite）
+│   │   └── records.js        # Pinia 状态管理
+│   ├── views/                # 路由页面
+│   ├── lib/                  # Supabase 客户端
 │   ├── App.vue               # 根组件
 │   ├── main.js               # 入口文件
 │   └── style.css             # 全局样式
-├── worker/
-│   ├── index.ts              # Worker 入口：assets + /api
+├── worker/                   # 后端 Cloudflare Worker
+│   ├── index.ts              # Worker 入口
 │   ├── routes/               # Hono API 路由
-│   ├── middleware/           # Auth/Turnstile/限流
+│   ├── middleware/           # 认证中间件
 │   └── lib/                  # Supabase 客户端
-├── wrangler.toml             # Worker + assets + vars
-├── docs/                     # 实施方案等文档
-├── index.html
-├── vite.config.js
-├── package.json
-└── README.md
+├── wrangler.toml             # Worker 配置
+├── vite.config.js            # 前端构建配置
+└── package.json
 ```
 
 ## 🎨 自定义配置
@@ -200,8 +198,8 @@ kids-med-tracker/
 
 ### 预设药物
 
-目前预设药物仍在前端配置（后续可迁移到 Supabase）：
-- `src/stores/records.js:1` 的 `medications`
+目前预设药物仍在前端配置：
+- `client/stores/records.js` 的 `medications`
 
 ### 本地调试（可选）
 
