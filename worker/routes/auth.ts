@@ -86,11 +86,16 @@ auth.get('/me', async c => {
   try {
     const supabase = createUserClient(c.env, accessToken)
 
-    // 更新最后登录时间
+    // 使用 upsert：不存在则创建用户，存在则更新登录时间
     await supabase
       .from('user_profiles')
-      .update({ last_login_at: new Date().toISOString() })
-      .eq('id', user.id)
+      .upsert({
+        id: user.id,
+        email: user.email,
+        last_login_at: new Date().toISOString()
+      }, {
+        onConflict: 'id'
+      })
 
     // 获取用户家庭列表
     const { data: memberships, error } = await supabase
