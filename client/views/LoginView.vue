@@ -33,28 +33,20 @@
       {{ errorMessage }}
     </div>
 
-    <!-- 成功提示 -->
-    <div
-      v-if="successMessage"
-      class="mb-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700 ring-1 ring-emerald-200"
-    >
-      {{ successMessage }}
-    </div>
-
     <!-- 登录卡片 -->
     <div class="card p-5">
       <!-- 步骤 1: 输入邮箱 -->
       <div v-if="step === 'email'">
         <h2 class="text-base font-semibold text-slate-900">
-          {{ t('views.login.magicLink.title') }}
+          {{ t('views.login.otp.title') }}
         </h2>
         <p class="mt-1 text-sm text-slate-600">
-          {{ t('views.login.magicLink.subtitle') }}
+          {{ t('views.login.otp.subtitle') }}
         </p>
 
         <form
           class="mt-4 space-y-4"
-          @submit.prevent="onSendMagicLink"
+          @submit.prevent="onSendCode"
         >
           <div>
             <label class="mb-1.5 block text-sm font-medium text-slate-800">
@@ -76,13 +68,13 @@
             :disabled="!canSubmit"
           >
             <span v-if="isSubmitting">{{ t('common.working') }}</span>
-            <span v-else>{{ t('views.login.magicLink.sendButton') }}</span>
+            <span v-else>{{ t('views.login.otp.sendButton') }}</span>
           </button>
         </form>
       </div>
 
-      <!-- 步骤 2: 已发送提示 -->
-      <div v-else-if="step === 'sent'">
+      <!-- 步骤 2: 输入验证码 -->
+      <div v-else-if="step === 'code'">
         <div class="text-center">
           <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
             <svg
@@ -100,26 +92,55 @@
             </svg>
           </div>
           <h2 class="text-base font-semibold text-slate-900">
-            {{ t('views.login.magicLink.sentTitle') }}
+            {{ t('views.login.otp.codeTitle') }}
           </h2>
           <p class="mt-2 text-sm text-slate-600">
-            {{ t('views.login.magicLink.sentSubtitle', { email }) }}
-          </p>
-          <p class="mt-4 text-xs text-slate-500">
-            {{ t('views.login.magicLink.checkSpam') }}
+            {{ t('views.login.otp.codeSubtitle', { email }) }}
           </p>
         </div>
 
-        <div class="mt-6 space-y-3">
+        <form
+          class="mt-6 space-y-4"
+          @submit.prevent="onVerifyCode"
+        >
+          <div>
+            <input
+              v-model="code"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              maxlength="6"
+              autocomplete="one-time-code"
+              class="input-field w-full text-center text-2xl font-mono tracking-[0.3em]"
+              :placeholder="t('views.login.otp.codePlaceholder')"
+              :disabled="isSubmitting"
+            >
+          </div>
+
+          <button
+            type="submit"
+            class="btn-primary w-full"
+            :disabled="!canVerify"
+          >
+            <span v-if="isSubmitting">{{ t('common.working') }}</span>
+            <span v-else>{{ t('views.login.otp.verifyButton') }}</span>
+          </button>
+        </form>
+
+        <p class="mt-4 text-center text-xs text-slate-500">
+          {{ t('views.login.otp.checkSpam') }}
+        </p>
+
+        <div class="mt-4 space-y-3">
           <button
             type="button"
             class="btn-secondary w-full"
             :disabled="!canResend"
-            @click="onSendMagicLink"
+            @click="onSendCode"
           >
-            <span v-if="isSubmitting">{{ t('common.working') }}</span>
-            <span v-else-if="!canResend">{{ t('views.login.magicLink.resendCountdown', { seconds: resendCountdown }) }}</span>
-            <span v-else>{{ t('views.login.magicLink.resendButton') }}</span>
+            <span v-if="isSubmitting && !code">{{ t('common.working') }}</span>
+            <span v-else-if="!canResend">{{ t('views.login.otp.resendCountdown', { seconds: resendCountdown }) }}</span>
+            <span v-else>{{ t('views.login.otp.resendButton') }}</span>
           </button>
 
           <button
@@ -147,12 +168,12 @@ const route = useRoute()
 const { t } = useI18n()
 const store = useRecordsStore()
 
-// 步骤: 'email' | 'sent'
+// 步骤: 'email' | 'code'
 const step = ref('email')
 const email = ref('')
+const code = ref('')
 const isSubmitting = ref(false)
 const errorMessage = ref('')
-const successMessage = ref('')
 
 // 重发倒计时
 const resendCountdown = ref(0)
@@ -165,6 +186,10 @@ const canSubmit = computed(() => {
 
 const canResend = computed(() => {
   return resendCountdown.value === 0 && !isSubmitting.value
+})
+
+const canVerify = computed(() => {
+  return !isSubmitting.value && code.value.trim().length === 6
 })
 
 // 处理 URL 错误参数
@@ -201,31 +226,58 @@ function startResendTimer() {
   }, 1000)
 }
 
-// 发送 Magic Link
-async function onSendMagicLink() {
+// 发送验证码
+async function onSendCode() {
   if (!canSubmit.value && step.value === 'email') return
-  if (!canResend.value && step.value === 'sent') return
+  if (!canResend.value && step.value === 'code') return
 
   isSubmitting.value = true
   errorMessage.value = ''
-  successMessage.value = ''
 
   try {
+    // 不设置 emailRedirectTo，Supabase 将发送验证码而非链接
     const { error } = await supabase.auth.signInWithOtp({
-      email: email.value.trim(),
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`
-      }
+      email: email.value.trim()
     })
 
     if (error) {
       throw error
     }
 
-    step.value = 'sent'
+    step.value = 'code'
     startResendTimer()
   } catch (err) {
-    errorMessage.value = err.message || t('views.login.errors.sendMagicLinkFailed')
+    errorMessage.value = err.message || t('views.login.errors.sendCodeFailed')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+// 验证验证码
+async function onVerifyCode() {
+  if (!canVerify.value) return
+
+  isSubmitting.value = true
+  errorMessage.value = ''
+
+  try {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: email.value.trim(),
+      token: code.value.trim(),
+      type: 'email'
+    })
+
+    if (error) {
+      throw error
+    }
+
+    if (data.session) {
+      await store.bootstrap()
+      const redirect = route.query.redirect || '/'
+      router.replace({ path: redirect })
+    }
+  } catch (err) {
+    errorMessage.value = err.message || t('views.login.errors.invalidCode')
   } finally {
     isSubmitting.value = false
   }
@@ -234,8 +286,8 @@ async function onSendMagicLink() {
 // 返回邮箱输入步骤
 function onBackToEmail() {
   step.value = 'email'
+  code.value = ''
   errorMessage.value = ''
-  successMessage.value = ''
   if (resendTimer) {
     clearInterval(resendTimer)
     resendTimer = null

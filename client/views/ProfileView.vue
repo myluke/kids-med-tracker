@@ -43,8 +43,12 @@ const handleLogout = async () => {
         <div class="flex items-center gap-3">
           <span class="text-xl">📤</span>
           <div class="text-left">
-            <div class="text-gray-800 font-medium">{{ t('views.profile.exportData') }}</div>
-            <div class="text-gray-400 text-sm">{{ t('views.profile.exportDesc') }}</div>
+            <div class="text-gray-800 font-medium">
+              {{ t('views.profile.exportData') }}
+            </div>
+            <div class="text-gray-400 text-sm">
+              {{ t('views.profile.exportDesc') }}
+            </div>
           </div>
         </div>
         <span class="text-gray-300">›</span>
