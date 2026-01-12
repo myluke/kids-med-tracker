@@ -31,7 +31,7 @@ const submit = () => {
 </script>
 
 <template>
-  <div class="panel">
+  <div>
     <div class="flex justify-between items-center mb-4">
       <span class="font-semibold text-gray-800">{{ t('panels.temp.title') }}</span>
       <button

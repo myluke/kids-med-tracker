@@ -90,6 +90,10 @@
       "title": "🌡️ Record temperature",
       "preciseLabel": "Exact temperature"
     },
+    "note": {
+      "title": "📝 Quick Note",
+      "placeholder": "Record your child's condition…"
+    },
     "submit": "✓ Confirm"
   },
   "quickActions": {

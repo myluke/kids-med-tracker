@@ -6,9 +6,11 @@ import { useUserStore, useFamilyStore, useChildrenStore, useRecordsStore, create
 import ChildTabs from '@/components/ChildTabs.vue'
 import MedTimer from '@/components/MedTimer.vue'
 import QuickActions from '@/components/QuickActions.vue'
+import BottomSheet from '@/components/BottomSheet.vue'
 import MedPanel from '@/components/MedPanel.vue'
 import CoughPanel from '@/components/CoughPanel.vue'
 import TempPanel from '@/components/TempPanel.vue'
+import NotePanel from '@/components/NotePanel.vue'
 import TodayStats from '@/components/TodayStats.vue'
 import HistoryList from '@/components/HistoryList.vue'
 
@@ -55,12 +57,14 @@ watchEffect(() => {
 const showMedPanel = ref(false)
 const showCoughPanel = ref(false)
 const showTempPanel = ref(false)
+const showNotePanel = ref(false)
 
 // 关闭所有面板
 const closeAllPanels = () => {
   showMedPanel.value = false
   showCoughPanel.value = false
   showTempPanel.value = false
+  showNotePanel.value = false
 }
 
 // 打开面板
@@ -79,11 +83,15 @@ const openTempPanel = () => {
 
 // 快速备注
 const quickNote = () => {
-  const note = prompt(t('prompt.quickNote'))
-  if (note && note.trim()) {
-    recordsStore.addNote(note.trim())
-    toast(t('toast.noteAdded'))
-  }
+  closeAllPanels()
+  showNotePanel.value = true
+}
+
+// 提交备注
+const submitNote = (note) => {
+  recordsStore.addNote(note)
+  showNotePanel.value = false
+  toast(t('toast.noteAdded'))
 }
 
 // 提交用药
@@ -117,32 +125,11 @@ const submitTemp = (value) => {
     <MedTimer />
 
     <!-- 快速操作 -->
-    <QuickActions 
+    <QuickActions
       @open-med="openMedPanel"
       @open-cough="openCoughPanel"
       @open-temp="openTempPanel"
       @quick-note="quickNote"
-    />
-
-    <!-- 用药面板 -->
-    <MedPanel 
-      v-if="showMedPanel"
-      @close="showMedPanel = false"
-      @submit="submitMed"
-    />
-
-    <!-- 咳嗽面板 -->
-    <CoughPanel
-      v-if="showCoughPanel"
-      @close="showCoughPanel = false"
-      @submit="submitCough"
-    />
-
-    <!-- 体温面板 -->
-    <TempPanel
-      v-if="showTempPanel"
-      @close="showTempPanel = false"
-      @submit="submitTemp"
     />
 
     <!-- 今日统计 -->
@@ -151,4 +138,48 @@ const submitTemp = (value) => {
     <!-- 历史记录 -->
     <HistoryList />
   </div>
+
+  <!-- 用药弹层 -->
+  <BottomSheet
+    :show="showMedPanel"
+    @close="showMedPanel = false"
+  >
+    <MedPanel
+      @close="showMedPanel = false"
+      @submit="submitMed"
+    />
+  </BottomSheet>
+
+  <!-- 咳嗽弹层 -->
+  <BottomSheet
+    :show="showCoughPanel"
+    @close="showCoughPanel = false"
+  >
+    <CoughPanel
+      @close="showCoughPanel = false"
+      @submit="submitCough"
+    />
+  </BottomSheet>
+
+  <!-- 体温弹层 -->
+  <BottomSheet
+    :show="showTempPanel"
+    @close="showTempPanel = false"
+  >
+    <TempPanel
+      @close="showTempPanel = false"
+      @submit="submitTemp"
+    />
+  </BottomSheet>
+
+  <!-- 备注弹层 -->
+  <BottomSheet
+    :show="showNotePanel"
+    @close="showNotePanel = false"
+  >
+    <NotePanel
+      @close="showNotePanel = false"
+      @submit="submitNote"
+    />
+  </BottomSheet>
 </template>

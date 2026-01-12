@@ -23,7 +23,7 @@ const submit = (level) => {
 </script>
 
 <template>
-  <div class="panel">
+  <div>
     <div class="flex justify-between items-center mb-4">
       <span class="font-semibold text-gray-800">{{ t('panels.cough.title') }}</span>
       <button
