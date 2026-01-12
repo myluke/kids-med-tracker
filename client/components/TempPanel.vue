@@ -1,9 +1,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRecordsStore } from '@/stores/records'
+import { useChildrenStore } from '@/stores'
 
-const store = useRecordsStore()
+const childrenStore = useChildrenStore()
 const emit = defineEmits(['close', 'submit'])
 const { t } = useI18n()
 
@@ -12,7 +12,7 @@ const tempValue = ref('')
 const quickTemps = [36.5, 37.0, 37.5, 38.0, 38.5, 39.0, 39.5, 40.0]
 
 const currentChildColor = computed(() => {
-  const child = store.children.find(c => c.id === store.currentChild)
+  const child = childrenStore.children.find(c => c.id === childrenStore.currentChild)
   return child?.color || '#8B9DD9'
 })
 
@@ -52,9 +52,9 @@ const submit = () => {
         :class="{ 
           'border-2': tempValue == tempOption 
         }"
-        :style="tempValue == tempOption ? { 
+        :style="tempValue == tempOption ? {
           borderColor: currentChildColor,
-          backgroundColor: store.children.find(c => c.id === store.currentChild)?.lightColor
+          backgroundColor: childrenStore.children.find(c => c.id === childrenStore.currentChild)?.lightColor
         } : {}"
         @click="setQuickTemp(tempOption)"
       >

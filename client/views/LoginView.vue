@@ -161,12 +161,12 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { supabase } from '@/lib/supabase'
-import { useRecordsStore } from '@/stores/records'
+import { useUserStore, bootstrap } from '@/stores'
 
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
-const store = useRecordsStore()
+const userStore = useUserStore()
 
 // 步骤: 'email' | 'code'
 const step = ref('email')
@@ -207,7 +207,7 @@ watch(() => route.query.error, (error) => {
 }, { immediate: true })
 
 // 如果已登录，跳转到首页
-watch(() => store.user, (user) => {
+watch(() => userStore.user, (user) => {
   if (user) {
     const redirect = route.query.redirect || '/'
     router.replace({ path: redirect })
@@ -272,7 +272,7 @@ async function onVerifyCode() {
     }
 
     if (data.session) {
-      await store.bootstrap()
+      await bootstrap()
       const redirect = route.query.redirect || '/'
       router.replace({ path: redirect })
     }
@@ -299,7 +299,7 @@ function onBackToEmail() {
 onMounted(() => {
   const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session) {
-      await store.bootstrap()
+      await bootstrap()
     }
   })
 

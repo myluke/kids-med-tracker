@@ -1,9 +1,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRecordsStore, medications } from '@/stores/records'
+import { useChildrenStore, medications } from '@/stores'
 
-const store = useRecordsStore()
+const childrenStore = useChildrenStore()
 const emit = defineEmits(['close', 'submit'])
 const { t } = useI18n()
 
@@ -12,7 +12,7 @@ const dosage = ref('')
 const temp = ref('')
 
 const currentChildColor = computed(() => {
-  const child = store.children.find(c => c.id === store.currentChild)
+  const child = childrenStore.children.find(c => c.id === childrenStore.currentChild)
   return child?.color || '#8B9DD9'
 })
 
@@ -60,9 +60,9 @@ const submit = () => {
         :class="selectedMed === med.name 
           ? 'border-current' 
           : 'border-gray-200 bg-white'"
-        :style="selectedMed === med.name ? { 
+        :style="selectedMed === med.name ? {
           borderColor: currentChildColor,
-          backgroundColor: store.children.find(c => c.id === store.currentChild)?.lightColor
+          backgroundColor: childrenStore.children.find(c => c.id === childrenStore.currentChild)?.lightColor
         } : {}"
         @click="selectMed(med)"
       >

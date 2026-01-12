@@ -1,12 +1,12 @@
 <script setup>
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRecordsStore } from '@/stores/records'
+import { useRecordsStore } from '@/stores'
 
-const store = useRecordsStore()
+const recordsStore = useRecordsStore()
 const { t } = useI18n()
 
-const stats = computed(() => store.todayStats)
+const stats = computed(() => recordsStore.todayStats)
 </script>
 
 <template>

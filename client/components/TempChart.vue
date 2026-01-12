@@ -13,28 +13,29 @@ import {
   Legend,
   Filler
 } from 'chart.js'
-import { useRecordsStore } from '@/stores/records'
+import { useChildrenStore, useRecordsStore } from '@/stores'
 
 ChartJS.register(
-  CategoryScale, 
-  LinearScale, 
-  PointElement, 
-  LineElement, 
-  Title, 
-  Tooltip, 
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
   Legend,
   Filler
 )
 
-const store = useRecordsStore()
+const childrenStore = useChildrenStore()
+const recordsStore = useRecordsStore()
 const { t, locale } = useI18n()
 
 const currentColor = computed(() => {
-  const child = store.children.find(c => c.id === store.currentChild)
+  const child = childrenStore.children.find(c => c.id === childrenStore.currentChild)
   return child?.color || '#8B9DD9'
 })
 
-const tempData = computed(() => store.getTempData(24))
+const tempData = computed(() => recordsStore.getTempData(24))
 
 const chartData = computed(() => {
   if (tempData.value.length === 0) {

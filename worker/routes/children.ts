@@ -8,14 +8,18 @@ const createChildSchema = z.object({
   familyId: z.string().min(1),
   name: z.string().trim().min(1).max(50),
   emoji: z.string().trim().optional(),
-  color: z.string().trim().optional()
+  color: z.string().trim().optional(),
+  gender: z.enum(['boy', 'girl']).optional(),
+  age: z.string().trim().optional()
 })
 
 const updateChildSchema = z.object({
   familyId: z.string().min(1),
   name: z.string().trim().min(1).max(50).optional(),
   emoji: z.string().trim().optional(),
-  color: z.string().trim().optional()
+  color: z.string().trim().optional(),
+  gender: z.enum(['boy', 'girl']).optional(),
+  age: z.string().trim().optional()
 })
 
 const children = new Hono<AppEnv>()
@@ -37,7 +41,7 @@ children.get('/', async c => {
 
   const { data, error } = await serviceClient
     .from('children')
-    .select('id, name, emoji, color')
+    .select('id, name, emoji, color, gender, age')
     .eq('family_id', familyId)
     .order('created_at', { ascending: true })
 
@@ -71,9 +75,11 @@ children.post('/', async c => {
       family_id: parsed.data.familyId,
       name: parsed.data.name,
       emoji: parsed.data.emoji || null,
-      color: parsed.data.color || null
+      color: parsed.data.color || null,
+      gender: parsed.data.gender || null,
+      age: parsed.data.age || null
     })
-    .select('id, name, emoji, color')
+    .select('id, name, emoji, color, gender, age')
     .single()
 
   if (error) {
@@ -105,6 +111,8 @@ children.patch('/:id', async c => {
   if (typeof parsed.data.name === 'string') updateData.name = parsed.data.name
   if (typeof parsed.data.emoji === 'string') updateData.emoji = parsed.data.emoji
   if (typeof parsed.data.color === 'string') updateData.color = parsed.data.color
+  if (typeof parsed.data.gender === 'string') updateData.gender = parsed.data.gender
+  if (typeof parsed.data.age === 'string') updateData.age = parsed.data.age
 
   if (Object.keys(updateData).length === 0) {
     return fail(c, 400, 'BAD_REQUEST', 'No fields to update')

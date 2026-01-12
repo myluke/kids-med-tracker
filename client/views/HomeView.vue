@@ -2,7 +2,7 @@
 import { ref, inject, computed, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useRecordsStore } from '@/stores/records'
+import { useUserStore, useFamilyStore, useChildrenStore, useRecordsStore, createChild } from '@/stores'
 import ChildTabs from '@/components/ChildTabs.vue'
 import MedTimer from '@/components/MedTimer.vue'
 import QuickActions from '@/components/QuickActions.vue'
@@ -12,26 +12,29 @@ import TempPanel from '@/components/TempPanel.vue'
 import TodayStats from '@/components/TodayStats.vue'
 import HistoryList from '@/components/HistoryList.vue'
 
-const store = useRecordsStore()
+const userStore = useUserStore()
+const familyStore = useFamilyStore()
+const childrenStore = useChildrenStore()
+const recordsStore = useRecordsStore()
 const toast = inject('toast')
 const { t } = useI18n()
 const router = useRouter()
 
-const hasFamilies = computed(() => (store.families?.length || 0) > 0)
+const hasFamilies = computed(() => (familyStore.families?.length || 0) > 0)
 const promptedForChild = ref(false)
 
 watchEffect(() => {
-  if (store.loading?.bootstrap) return
-  if (!store.user) return
+  if (userStore.loading) return
+  if (!userStore.user) return
   if (!hasFamilies.value) router.replace({ name: 'no-family' })
 })
 
 watchEffect(() => {
-  if (store.loading?.bootstrap) return
-  if (!store.user) return
+  if (userStore.loading) return
+  if (!userStore.user) return
   if (!hasFamilies.value) return
-  if (!store.isOwner) return
-  if (store.children?.length > 0) return
+  if (!familyStore.isOwner) return
+  if (childrenStore.children?.length > 0) return
   if (promptedForChild.value) return
 
   promptedForChild.value = true
@@ -39,7 +42,7 @@ watchEffect(() => {
   const name = prompt(t('prompt.childName'))
   if (!name || !name.trim()) return
 
-  store.createChild({
+  createChild({
     name: name.trim(),
     emoji: '👶',
     color: '#8B9DD9'
@@ -78,28 +81,28 @@ const openTempPanel = () => {
 const quickNote = () => {
   const note = prompt(t('prompt.quickNote'))
   if (note && note.trim()) {
-    store.addNote(note.trim())
+    recordsStore.addNote(note.trim())
     toast(t('toast.noteAdded'))
   }
 }
 
 // 提交用药
 const submitMed = ({ drug, dosage, temp }) => {
-  store.addMedRecord(drug, dosage, temp)
+  recordsStore.addMedRecord(drug, dosage, temp)
   showMedPanel.value = false
   toast(t('toast.medRecorded', { drug }))
 }
 
 // 提交咳嗽
 const submitCough = ({ level, note }) => {
-  store.addCoughRecord(level, note)
+  recordsStore.addCoughRecord(level, note)
   showCoughPanel.value = false
   toast(t('toast.coughRecorded', { level }))
 }
 
 // 提交体温
 const submitTemp = (value) => {
-  store.addTempRecord(value)
+  recordsStore.addTempRecord(value)
   showTempPanel.value = false
   toast(t('toast.tempRecorded', { value }))
 }

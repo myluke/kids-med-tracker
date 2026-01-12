@@ -89,12 +89,12 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useRecordsStore } from '@/stores/records'
+import { useUserStore, acceptInvite } from '@/stores'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
-const records = useRecordsStore()
+const userStore = useUserStore()
 
 const token = computed(() => String(route.params.token || '').trim())
 const tokenPreview = computed(() => {
@@ -107,7 +107,7 @@ const tokenPreview = computed(() => {
 const isSubmitting = ref(false)
 const isSuccess = ref(false)
 
-const errorMessage = computed(() => records.error || '')
+const errorMessage = computed(() => userStore.error || '')
 
 const isAcceptDisabled = computed(() => {
   const tokenOk = !!token.value
@@ -121,7 +121,7 @@ async function onAccept() {
   isSuccess.value = false
 
   try {
-    await records.acceptInvite({
+    await acceptInvite({
       token: token.value
     })
     isSuccess.value = true

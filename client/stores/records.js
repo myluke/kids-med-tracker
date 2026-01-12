@@ -1,374 +1,48 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { supabase } from '@/lib/supabase'
-
-export const medications = [
-  { name: '布洛芬', icon: '🔥', isFeverMed: true, interval: 6 },
-  { name: '对乙酰氨基酚', icon: '💧', isFeverMed: true, interval: 4 },
-  { name: '奥司他韦', icon: '💊', isFeverMed: false, interval: 12 },
-  { name: '止咳糖浆', icon: '🍯', isFeverMed: false, interval: 0 },
-  { name: '小儿氨酚黄那敏', icon: '🌿', isFeverMed: false, interval: 0 },
-  { name: '其他', icon: '➕', isFeverMed: false, interval: 0 }
-]
-
-export const feverMeds = medications.filter(m => m.isFeverMed).map(m => m.name)
-
-async function apiFetch(path, { method = 'GET', json, query, headers } = {}) {
-  const url = new URL(path, window.location.origin)
-  if (query) {
-    Object.entries(query).forEach(([k, v]) => {
-      if (v === undefined || v === null || v === '') return
-      url.searchParams.set(k, String(v))
-    })
-  }
-
-  // 从 Supabase 获取 access token
-  const { data: { session } } = await supabase.auth.getSession()
-  const accessToken = session?.access_token
-
-  const requestHeaders = {
-    ...(json ? { 'Content-Type': 'application/json' } : {}),
-    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    ...(headers || {})
-  }
-
-  const res = await fetch(url.toString(), {
-    method,
-    headers: requestHeaders,
-    body: json ? JSON.stringify(json) : undefined
-  })
-
-  const contentType = res.headers.get('content-type') || ''
-  const isJson = contentType.includes('application/json')
-  const data = isJson ? await res.json() : await res.text()
-
-  if (!res.ok) {
-    if (isJson && data && data.error) {
-      const message = data.error.message || data.error.code || 'Request failed'
-      throw new Error(message)
-    }
-    throw new Error(typeof data === 'string' ? data : 'Request failed')
-  }
-
-  if (isJson && data && data.ok === false) {
-    throw new Error(data.error?.message || 'Request failed')
-  }
-
-  return isJson && data && data.ok === true ? data.data : data
-}
-
-function safeJsonParse(value) {
-  try {
-    return JSON.parse(value)
-  } catch {
-    return null
-  }
-}
-
-function clampByte(n) {
-  return Math.max(0, Math.min(255, n))
-}
-
-function hexToRgb(hex) {
-  const value = hex.replace('#', '').trim()
-  if (value.length !== 6) return null
-  const r = parseInt(value.slice(0, 2), 16)
-  const g = parseInt(value.slice(2, 4), 16)
-  const b = parseInt(value.slice(4, 6), 16)
-  if ([r, g, b].some(Number.isNaN)) return null
-  return { r, g, b }
-}
-
-function rgbToHex({ r, g, b }) {
-  return (
-    '#' +
-    clampByte(r).toString(16).padStart(2, '0') +
-    clampByte(g).toString(16).padStart(2, '0') +
-    clampByte(b).toString(16).padStart(2, '0')
-  )
-}
-
-function lightenHex(hex, ratio = 0.85) {
-  const rgb = hexToRgb(hex)
-  if (!rgb) return '#FFFFFF'
-  return rgbToHex({
-    r: Math.round(rgb.r + (255 - rgb.r) * ratio),
-    g: Math.round(rgb.g + (255 - rgb.g) * ratio),
-    b: Math.round(rgb.b + (255 - rgb.b) * ratio)
-  })
-}
+import { safeJsonParse } from '@/services/api'
+import * as recordService from '@/services/recordService'
+import { feverMeds } from '@/config/medications'
+import { useUserStore } from './user'
+import { useFamilyStore } from './family'
+import { useChildrenStore } from './children'
 
 export const useRecordsStore = defineStore('records', () => {
-  const user = ref(null)
-  const families = ref([])
-  const currentFamilyId = ref(null)
-
-  const children = ref([])
-  const currentChild = ref(null)
-
   const recordsByChild = ref({})
 
-  const initialized = ref(false)
-  const loading = ref({
-    bootstrap: false
-  })
+  // 获取其他 store
+  const userStore = useUserStore()
+  const familyStore = useFamilyStore()
+  const childrenStore = useChildrenStore()
 
-  const error = ref(null)
-
-  const currentFamilyRole = computed(() => {
-    if (!currentFamilyId.value) return null
-    const family = families.value.find(f => f.id === currentFamilyId.value)
-    return family?.role || null
-  })
-
-  const isOwner = computed(() => currentFamilyRole.value === 'owner')
-
+  /**
+   * 当前孩子的所有记录
+   */
   const currentRecords = computed(() => {
-    if (!currentChild.value) return []
-    return recordsByChild.value[currentChild.value] || []
+    if (!childrenStore.currentChild) return []
+    return recordsByChild.value[childrenStore.currentChild] || []
   })
 
-  const bootstrap = async () => {
-    if (loading.value.bootstrap) return
-    loading.value.bootstrap = true
-
-    try {
-      error.value = null
-
-      const me = await apiFetch('/api/auth/me')
-      user.value = me.user
-      families.value = me.families || []
-
-      // 用户未登录则直接返回
-      if (!user.value) {
-        initialized.value = true
-        return
-      }
-
-      if (!currentFamilyId.value && families.value.length > 0) {
-        currentFamilyId.value = families.value[0].id
-      }
-
-      if (currentFamilyId.value) {
-        await loadChildren(currentFamilyId.value)
-      }
-
-      if (!currentChild.value && children.value.length > 0) {
-        currentChild.value = children.value[0].id
-      }
-
-      if (currentFamilyId.value && currentChild.value) {
-        await loadRecords({
-          familyId: currentFamilyId.value,
-          childId: currentChild.value
-        })
-      }
-    } catch (e) {
-      error.value = e instanceof Error ? e.message : String(e)
-    } finally {
-      loading.value.bootstrap = false
-      initialized.value = true
-    }
-  }
-
-  const setFamily = async (familyId) => {
-    currentFamilyId.value = familyId
-    children.value = []
-    currentChild.value = null
-    recordsByChild.value = {}
-
-    await loadChildren(familyId)
-
-    if (children.value.length > 0) {
-      currentChild.value = children.value[0].id
-      await loadRecords({ familyId, childId: currentChild.value })
-    }
-  }
-
-
-  const loadChildren = async (familyId) => {
-    const result = await apiFetch('/api/children', {
-      query: { familyId }
-    })
-
-    const list = Array.isArray(result) ? result : []
-    children.value = list.map(c => ({
-      ...c,
-      lightColor: c.lightColor || lightenHex(c.color || '#8B9DD9')
-    }))
-  }
-
-  const createChild = async ({ name, emoji, color }) => {
-    if (!currentFamilyId.value) throw new Error('Missing family')
-
-    const child = await apiFetch('/api/children', {
-      method: 'POST',
-      json: {
-        familyId: currentFamilyId.value,
-        name,
-        emoji,
-        color
-      }
-    })
-
-    await loadChildren(currentFamilyId.value)
-
-    if (!currentChild.value && child?.id) {
-      currentChild.value = child.id
-    }
-
-    return child
-  }
-
-  const loadRecords = async ({ familyId, childId, since, limit } = {}) => {
-    const result = await apiFetch('/api/records', {
-      query: { familyId, childId, since, limit }
-    })
-
-    const rows = Array.isArray(result) ? result : []
-    const normalized = rows.map(row => {
-      const payload = typeof row.payloadJson === 'string' ? safeJsonParse(row.payloadJson) : row.payload
-      return {
-        id: row.id,
-        type: row.type,
-        time: row.time,
-        createdByUserId: row.createdByUserId,
-        ...(payload || {})
-      }
-    })
-
-    recordsByChild.value = {
-      ...recordsByChild.value,
-      [childId]: normalized
-    }
-
-    return normalized
-  }
-
-  const createFamily = async ({ name }) => {
-    const family = await apiFetch('/api/families', {
-      method: 'POST',
-      json: { name }
-    })
-
-    await bootstrap()
-
-    if (family?.id) {
-      await setFamily(family.id)
-    }
-
-    return family
-  }
-
-  const createInvite = async ({ familyId }) => {
-    return apiFetch('/api/invites', {
-      method: 'POST',
-      json: { familyId }
-    })
-  }
-
-  const acceptInvite = async ({ token }) => {
-    const res = await apiFetch('/api/invites/accept', {
-      method: 'POST',
-      json: { token }
-    })
-
-    await bootstrap()
-    if (res?.familyId) {
-      await setFamily(res.familyId)
-    }
-
-    return res
-  }
-
-  const switchChild = async (childId) => {
-    currentChild.value = childId
-
-    if (!currentFamilyId.value) return
-
-    if (!recordsByChild.value[childId]) {
-      await loadRecords({ familyId: currentFamilyId.value, childId })
-    }
-  }
-
-  const addRecord = async (type, payload) => {
-    if (!currentFamilyId.value || !currentChild.value) {
-      throw new Error('Missing family or child')
-    }
-
-    const now = new Date().toISOString()
-
-    const created = await apiFetch('/api/records', {
-      method: 'POST',
-      json: {
-        familyId: currentFamilyId.value,
-        childId: currentChild.value,
-        type,
-        time: now,
-        payload
-      }
-    })
-
-    const localRecord = {
-      id: created.id,
-      type,
-      time: now,
-      createdByUserId: user.value?.id,
-      ...(payload || {})
-    }
-
-    recordsByChild.value = {
-      ...recordsByChild.value,
-      [currentChild.value]: [localRecord, ...(recordsByChild.value[currentChild.value] || [])]
-    }
-
-    return localRecord
-  }
-
-  const addMedRecord = (drug, dosage, temp = null) => {
-    return addRecord('med', { drug, dosage, temp })
-  }
-
-  const addCoughRecord = (level, note = '') => {
-    return addRecord('cough', { level, note })
-  }
-
-  const addTempRecord = (value) => {
-    return addRecord('temp', { value })
-  }
-
-  const addNote = (content) => {
-    return addRecord('note', { content })
-  }
-
-  const deleteRecordById = async (recordId) => {
-    if (!currentFamilyId.value) throw new Error('Missing family')
-
-    await apiFetch(`/api/records/${recordId}`, {
-      method: 'DELETE',
-      query: { familyId: currentFamilyId.value }
-    })
-
-    const childId = currentChild.value
-    if (!childId) return
-
-    recordsByChild.value = {
-      ...recordsByChild.value,
-      [childId]: (recordsByChild.value[childId] || []).filter(r => r.id !== recordId)
-    }
-  }
-
+  /**
+   * 最后一次退烧药记录
+   */
   const lastFeverMed = computed(() => {
     return currentRecords.value
       .filter(r => r.type === 'med' && feverMeds.includes(r.drug))
       .sort((a, b) => new Date(b.time) - new Date(a.time))[0] || null
   })
 
+  /**
+   * 距离上次退烧药的时间（毫秒）
+   */
   const timeSinceLastFeverMed = computed(() => {
     if (!lastFeverMed.value) return null
     return Date.now() - new Date(lastFeverMed.value.time).getTime()
   })
 
+  /**
+   * 今日统计
+   */
   const todayStats = computed(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -391,13 +65,136 @@ export const useRecordsStore = defineStore('records', () => {
     return { medCount, coughCount, lastTemp }
   })
 
+  /**
+   * 加载记录
+   */
+  const loadRecords = async ({ familyId, childId, since, limit } = {}) => {
+    const result = await recordService.getRecords({ familyId, childId, since, limit })
+
+    const rows = Array.isArray(result) ? result : []
+    const normalized = rows.map(row => {
+      const payload = typeof row.payloadJson === 'string' ? safeJsonParse(row.payloadJson) : row.payload
+      return {
+        id: row.id,
+        type: row.type,
+        time: row.time,
+        createdByUserId: row.createdByUserId,
+        ...(payload || {})
+      }
+    })
+
+    recordsByChild.value = {
+      ...recordsByChild.value,
+      [childId]: normalized
+    }
+
+    return normalized
+  }
+
+  /**
+   * 添加记录
+   */
+  const addRecord = async (type, payload) => {
+    const familyId = familyStore.currentFamilyId
+    const childId = childrenStore.currentChild
+
+    if (!familyId || !childId) {
+      throw new Error('Missing family or child')
+    }
+
+    const now = new Date().toISOString()
+
+    const created = await recordService.createRecord({
+      familyId,
+      childId,
+      type,
+      time: now,
+      payload
+    })
+
+    const localRecord = {
+      id: created.id,
+      type,
+      time: now,
+      createdByUserId: userStore.user?.id,
+      ...(payload || {})
+    }
+
+    recordsByChild.value = {
+      ...recordsByChild.value,
+      [childId]: [localRecord, ...(recordsByChild.value[childId] || [])]
+    }
+
+    return localRecord
+  }
+
+  /**
+   * 添加用药记录
+   */
+  const addMedRecord = (drug, dosage, temp = null) => {
+    return addRecord('med', { drug, dosage, temp })
+  }
+
+  /**
+   * 添加咳嗽记录
+   */
+  const addCoughRecord = (level, note = '') => {
+    return addRecord('cough', { level, note })
+  }
+
+  /**
+   * 添加体温记录
+   */
+  const addTempRecord = (value) => {
+    return addRecord('temp', { value })
+  }
+
+  /**
+   * 添加备注
+   */
+  const addNote = (content) => {
+    return addRecord('note', { content })
+  }
+
+  /**
+   * 删除记录
+   */
+  const deleteRecordById = async (recordId) => {
+    const familyId = familyStore.currentFamilyId
+    if (!familyId) throw new Error('Missing family')
+
+    await recordService.deleteRecord({ recordId, familyId })
+
+    const childId = childrenStore.currentChild
+    if (!childId) return
+
+    recordsByChild.value = {
+      ...recordsByChild.value,
+      [childId]: (recordsByChild.value[childId] || []).filter(r => r.id !== recordId)
+    }
+  }
+
+  /**
+   * 清除指定孩子的记录缓存
+   */
+  const clearChildRecords = (childId) => {
+    if (recordsByChild.value[childId]) {
+      // eslint-disable-next-line no-unused-vars
+      const { [childId]: _removed, ...rest } = recordsByChild.value
+      recordsByChild.value = rest
+    }
+  }
+
+  /**
+   * 导出记录为文本
+   */
   const exportRecords = ({ locale = 'zh-CN', t } = {}) => {
     if (typeof t !== 'function') return ''
 
     let report = `=== ${t('export.reportTitle')} ===\n`
     report += `${t('export.exportedAt')}: ${new Date().toLocaleString(locale)}\n\n`
 
-    children.value.forEach(child => {
+    childrenStore.children.forEach(child => {
       const childRecords = recordsByChild.value[child.id] || []
       const sorted = [...childRecords].sort((a, b) =>
         new Date(b.time) - new Date(a.time)
@@ -425,6 +222,9 @@ export const useRecordsStore = defineStore('records', () => {
     return report
   }
 
+  /**
+   * 获取体温数据（用于图表）
+   */
   const getTempData = (hours = 24) => {
     const cutoff = Date.now() - hours * 60 * 60 * 1000
     return currentRecords.value
@@ -437,6 +237,9 @@ export const useRecordsStore = defineStore('records', () => {
       .sort((a, b) => a.time - b.time)
   }
 
+  /**
+   * 获取咳嗽统计数据
+   */
   const getCoughData = (days = 3, t) => {
     const translate = typeof t === 'function' ? t : (key) => key
 
@@ -464,6 +267,9 @@ export const useRecordsStore = defineStore('records', () => {
     return result
   }
 
+  /**
+   * 获取恢复统计
+   */
   const getRecoveryStats = () => {
     const allRecords = currentRecords.value
     if (allRecords.length === 0) {
@@ -481,75 +287,33 @@ export const useRecordsStore = defineStore('records', () => {
     return { totalDays, totalMeds, avgCough }
   }
 
-  // ============== 认证相关方法 ==============
-
   /**
-   * 登出
+   * 重置状态
    */
-  const logout = async () => {
-    // 先登出 Supabase
-    await supabase.auth.signOut()
-
-    // 通知后端
-    try {
-      await apiFetch('/api/auth/logout', { method: 'POST' })
-    } catch {
-      // 忽略错误，本地状态已清除
-    }
-
-    // 清除本地状态
-    user.value = null
-    families.value = []
-    currentFamilyId.value = null
-    children.value = []
-    currentChild.value = null
+  const reset = () => {
     recordsByChild.value = {}
   }
 
-  // 不自动执行 bootstrap，由路由守卫控制
-  // bootstrap()
-
   return {
-    user,
-    families,
-    currentFamilyId,
-    currentFamilyRole,
-    isOwner,
-    children,
-    currentChild,
-
-    initialized,
-    loading,
-    error,
-
+    recordsByChild,
     currentRecords,
     lastFeverMed,
     timeSinceLastFeverMed,
     todayStats,
 
-    bootstrap,
-    setFamily,
-    createFamily,
-    createInvite,
-    acceptInvite,
-
-    // 认证相关
-    logout,
-
-    switchChild,
-    loadChildren,
-    createChild,
     loadRecords,
-
+    addRecord,
     addMedRecord,
     addCoughRecord,
     addTempRecord,
     addNote,
     deleteRecordById,
+    clearChildRecords,
 
     exportRecords,
     getTempData,
     getCoughData,
-    getRecoveryStats
+    getRecoveryStats,
+    reset
   }
 })

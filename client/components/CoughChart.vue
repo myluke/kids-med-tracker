@@ -11,26 +11,27 @@ import {
   Tooltip, 
   Legend 
 } from 'chart.js'
-import { useRecordsStore } from '@/stores/records'
+import { useChildrenStore, useRecordsStore } from '@/stores'
 
 ChartJS.register(
-  CategoryScale, 
-  LinearScale, 
-  BarElement, 
-  Title, 
-  Tooltip, 
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
   Legend
 )
 
-const store = useRecordsStore()
+const childrenStore = useChildrenStore()
+const recordsStore = useRecordsStore()
 const { t } = useI18n()
 
 const currentColor = computed(() => {
-  const child = store.children.find(c => c.id === store.currentChild)
+  const child = childrenStore.children.find(c => c.id === childrenStore.currentChild)
   return child?.color || '#8B9DD9'
 })
 
-const coughData = computed(() => store.getCoughData(3, t))
+const coughData = computed(() => recordsStore.getCoughData(3, t))
 
 const chartData = computed(() => {
   return {

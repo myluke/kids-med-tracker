@@ -2,11 +2,12 @@
 import { ref, computed, provide } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useRecordsStore } from './stores/records'
+import { useRecordsStore, useChildrenStore } from './stores'
 
 const router = useRouter()
 const route = useRoute()
-const store = useRecordsStore()
+const recordsStore = useRecordsStore()
+const childrenStore = useChildrenStore()
 const { t, locale } = useI18n()
 
 // Toast状态
@@ -38,7 +39,7 @@ setInterval(updateTime, 1000)
 
 // 导出数据
 const exportData = () => {
-  const data = store.exportRecords({
+  const data = recordsStore.exportRecords({
     locale: locale.value,
     t
   })
@@ -60,7 +61,7 @@ provide('exportData', exportData)
 
 // 当前主题色（根据选中的孩子）
 const themeClass = computed(() => {
-  return store.currentChild === 'child2' ? 'theme-erbao' : 'theme-dabo'
+  return childrenStore.currentChild === 'child2' ? 'theme-erbao' : 'theme-dabo'
 })
 </script>
 

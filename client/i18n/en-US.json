@@ -16,7 +16,8 @@
     "yesterday": "Yesterday",
     "dayBeforeYesterday": "2 days ago",
     "notFilled": "Not provided",
-    "working": "Working…"
+    "working": "Working…",
+    "error": "Operation failed"
   },
   "toast": {
     "exported": "✓ Exported",
@@ -25,7 +26,10 @@
     "medRecorded": "✓ Recorded {drug}",
     "coughRecorded": "✓ Recorded cough - {level}",
     "tempRecorded": "✓ Recorded temperature {value}°",
-    "childAdded": "✓ Added child {name}"
+    "childAdded": "✓ Added child {name}",
+    "childUpdated": "✓ Child info updated",
+    "childDeleted": "✓ Child deleted",
+    "inviteCopied": "✓ Invite link copied"
   },
   "confirm": {
     "deleteRecord": "Delete this record?"
@@ -210,7 +214,39 @@
       "exportData": "Export Data",
       "exportDesc": "Export all records to a file",
       "logout": "Log Out",
-      "logoutConfirm": "Are you sure you want to log out?"
+      "logoutConfirm": "Are you sure you want to log out?",
+      "childrenSection": {
+        "title": "Children",
+        "empty": "No children yet",
+        "addChild": "Add Child",
+        "editChild": "Edit Child",
+        "deleteChild": "Delete Child",
+        "deleteConfirm": "Delete {name}? Related records will also be deleted.",
+        "childName": "Name",
+        "childNamePlaceholder": "Enter child name",
+        "childGender": "Gender",
+        "childAge": "Age",
+        "childAgePlaceholder": "e.g. 3 years old",
+        "childEmoji": "Avatar",
+        "childColor": "Theme Color"
+      },
+      "familySection": {
+        "title": "Family",
+        "currentFamily": "Current Family",
+        "role": "Role",
+        "roleOwner": "Owner",
+        "roleMember": "Member",
+        "switchFamily": "Switch Family",
+        "invite": "Invite Member",
+        "inviteDesc": "Generate invite link to share",
+        "inviteTitle": "Invite Link",
+        "inviteSubtitle": "Share this link to invite family members",
+        "inviteExpires": "Valid for 7 days",
+        "copyLink": "Copy Link",
+        "copied": "Copied",
+        "generating": "Generating…",
+        "noOtherFamilies": "No other families"
+      }
     }
   }
 }

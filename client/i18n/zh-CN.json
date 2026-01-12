@@ -16,7 +16,8 @@
     "yesterday": "昨天",
     "dayBeforeYesterday": "前天",
     "notFilled": "未填写",
-    "working": "处理中…"
+    "working": "处理中…",
+    "error": "操作失败"
   },
   "toast": {
     "exported": "✓ 已导出记录",
@@ -25,7 +26,10 @@
     "medRecorded": "✓ 已记录 {drug}",
     "coughRecorded": "✓ 已记录咳嗽 - {level}",
     "tempRecorded": "✓ 已记录体温 {value}°",
-    "childAdded": "✓ 已添加孩子 {name}"
+    "childAdded": "✓ 已添加宝贝 {name}",
+    "childUpdated": "✓ 已更新宝贝信息",
+    "childDeleted": "✓ 已删除宝贝",
+    "inviteCopied": "✓ 邀请链接已复制"
   },
   "confirm": {
     "deleteRecord": "确定删除这条记录吗？"
@@ -210,7 +214,39 @@
       "exportData": "导出数据",
       "exportDesc": "将所有记录导出为文件",
       "logout": "退出登录",
-      "logoutConfirm": "确定要退出登录吗？"
+      "logoutConfirm": "确定要退出登录吗？",
+      "childrenSection": {
+        "title": "宝贝管理",
+        "empty": "暂无宝贝",
+        "addChild": "添加宝贝",
+        "editChild": "编辑宝贝",
+        "deleteChild": "删除宝贝",
+        "deleteConfirm": "确定要删除 {name} 吗？删除后相关记录也会被删除。",
+        "childName": "昵称",
+        "childNamePlaceholder": "请输入宝贝昵称",
+        "childGender": "性别",
+        "childAge": "年龄",
+        "childAgePlaceholder": "如：3岁",
+        "childEmoji": "头像",
+        "childColor": "主题色"
+      },
+      "familySection": {
+        "title": "家庭管理",
+        "currentFamily": "当前家庭",
+        "role": "角色",
+        "roleOwner": "所有者",
+        "roleMember": "成员",
+        "switchFamily": "切换家庭",
+        "invite": "邀请成员",
+        "inviteDesc": "生成邀请链接分享给家人",
+        "inviteTitle": "邀请链接",
+        "inviteSubtitle": "分享此链接邀请家人加入",
+        "inviteExpires": "7天内有效",
+        "copyLink": "复制链接",
+        "copied": "已复制",
+        "generating": "生成中…",
+        "noOtherFamilies": "暂无其他家庭"
+      }
     }
   }
 }

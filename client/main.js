@@ -57,21 +57,21 @@ const router = createRouter({
 })
 
 // 路由守卫：检查认证状态
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   // 动态导入 store（避免循环依赖）
-  const { useRecordsStore } = await import('./stores/records')
-  const store = useRecordsStore(pinia)
+  const { useUserStore, bootstrap } = await import('./stores')
+  const userStore = useUserStore(pinia)
 
   // 如果还没有初始化，先初始化
-  if (!store.initialized) {
-    await store.bootstrap()
+  if (!userStore.initialized) {
+    await bootstrap()
   }
 
   // 检查是否需要认证
-  if (to.meta.requiresAuth && !store.user) {
+  if (to.meta.requiresAuth && !userStore.user) {
     // 需要认证但未登录，跳转到登录页
     next({ name: 'login', query: { redirect: to.fullPath } })
-  } else if (to.name === 'login' && store.user) {
+  } else if (to.name === 'login' && userStore.user) {
     // 已登录但访问登录页，跳转到首页
     next({ name: 'home' })
   } else {

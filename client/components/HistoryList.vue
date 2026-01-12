@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRecordsStore } from '@/stores/records'
+import { useUserStore, useFamilyStore, useRecordsStore } from '@/stores'
 
-const store = useRecordsStore()
+const userStore = useUserStore()
+const familyStore = useFamilyStore()
+const recordsStore = useRecordsStore()
 const toast = inject('toast')
 const { t, locale } = useI18n()
 
@@ -15,14 +17,14 @@ const filters = [
 ]
 
 const filteredRecords = computed(() => {
-  let records = [...store.currentRecords].sort((a, b) => 
+  let records = [...recordsStore.currentRecords].sort((a, b) =>
     new Date(b.time) - new Date(a.time)
   )
-  
+
   if (currentFilter.value !== 'all') {
     records = records.filter(r => r.type === currentFilter.value)
   }
-  
+
   return records.slice(0, 20)
 })
 
@@ -70,15 +72,15 @@ const getRecordDisplay = (record) => {
 }
 
 const canDeleteRecord = (record) => {
-  if (store.isOwner) return true
-  if (!store.user) return false
-  return record.createdByUserId === store.user.id
+  if (familyStore.isOwner) return true
+  if (!userStore.user) return false
+  return record.createdByUserId === userStore.user.id
 }
 
 const deleteRecord = (recordId) => {
   if (!recordId) return
   if (confirm(t('confirm.deleteRecord'))) {
-    store.deleteRecordById(recordId)
+    recordsStore.deleteRecordById(recordId)
     toast(t('toast.deleted'))
   }
 }

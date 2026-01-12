@@ -1,28 +1,28 @@
 <script setup>
 import { useI18n } from 'vue-i18n'
-import { useRecordsStore } from '@/stores/records'
+import { useChildrenStore, switchChild } from '@/stores'
 
-const store = useRecordsStore()
+const childrenStore = useChildrenStore()
 const { t } = useI18n()
 </script>
 
 <template>
   <div class="flex gap-3">
     <button
-      v-for="child in store.children"
+      v-for="child in childrenStore.children"
       :key="child.id"
       class="flex-1 p-4 rounded-xl border-3 transition-all text-center relative overflow-hidden"
       :class="[
-        store.currentChild === child.id 
-          ? 'border-current shadow-lg' 
+        childrenStore.currentChild === child.id
+          ? 'border-current shadow-lg'
           : 'border-transparent',
         child.id === 'child1' ? 'bg-dabo-light' : 'bg-erbao-light'
       ]"
-      :style="store.currentChild === child.id ? { 
+      :style="childrenStore.currentChild === child.id ? {
         borderColor: child.color,
         boxShadow: `0 4px 15px ${child.color}40`
       } : {}"
-      @click="store.switchChild(child.id)"
+      @click="switchChild(child.id)"
     >
       <div 
         class="w-12 h-12 rounded-full flex items-center justify-center text-2xl mx-auto mb-2"

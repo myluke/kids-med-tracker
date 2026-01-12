@@ -33,11 +33,10 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { supabase } from '@/lib/supabase'
-import { useRecordsStore } from '@/stores/records'
+import { bootstrap } from '@/stores'
 
 const router = useRouter()
 const { t } = useI18n()
-const store = useRecordsStore()
 const error = ref('')
 const handled = ref(false)
 
@@ -55,7 +54,7 @@ async function handleSignIn(session) {
   }
 
   try {
-    await store.bootstrap()
+    await bootstrap()
     router.replace('/')
   } catch (err) {
     console.error('Bootstrap error:', err)

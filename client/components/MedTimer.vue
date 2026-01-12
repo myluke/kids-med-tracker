@@ -1,9 +1,9 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRecordsStore } from '@/stores/records'
+import { useRecordsStore } from '@/stores'
 
-const store = useRecordsStore()
+const recordsStore = useRecordsStore()
 const { t } = useI18n()
 
 // 每分钟更新一次
@@ -22,7 +22,7 @@ onUnmounted(() => {
 
 // 计算显示内容
 const timerData = computed(() => {
-  const lastMed = store.lastFeverMed
+  const lastMed = recordsStore.lastFeverMed
   
   if (!lastMed) {
     return {

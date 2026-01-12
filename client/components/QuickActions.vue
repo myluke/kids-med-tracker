@@ -1,15 +1,15 @@
 <script setup>
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRecordsStore } from '@/stores/records'
+import { useChildrenStore } from '@/stores'
 
-const store = useRecordsStore()
+const childrenStore = useChildrenStore()
 const { t } = useI18n()
 
 const emit = defineEmits(['open-med', 'open-cough', 'open-temp', 'quick-note'])
 
 const currentChildColor = computed(() => {
-  const child = store.children.find(c => c.id === store.currentChild)
+  const child = childrenStore.children.find(c => c.id === childrenStore.currentChild)
   return child?.color || '#8B9DD9'
 })
 </script>

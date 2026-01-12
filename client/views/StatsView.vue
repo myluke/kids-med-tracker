@@ -1,15 +1,15 @@
 <script setup>
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRecordsStore } from '@/stores/records'
+import { useRecordsStore } from '@/stores'
 import ChildTabs from '@/components/ChildTabs.vue'
 import TempChart from '@/components/TempChart.vue'
 import CoughChart from '@/components/CoughChart.vue'
 
-const store = useRecordsStore()
+const recordsStore = useRecordsStore()
 const { t } = useI18n()
 
-const recoveryStats = computed(() => store.getRecoveryStats())
+const recoveryStats = computed(() => recordsStore.getRecoveryStats())
 </script>
 
 <template>

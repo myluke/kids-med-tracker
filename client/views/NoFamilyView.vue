@@ -107,17 +107,18 @@
 import { computed, ref, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useRecordsStore } from '@/stores/records'
+import { useUserStore, useFamilyStore, createFamily } from '@/stores'
 
 const router = useRouter()
 const { t } = useI18n()
-const records = useRecordsStore()
+const userStore = useUserStore()
+const familyStore = useFamilyStore()
 
 const familyName = ref('')
 const isSubmitting = ref(false)
 
-const hasFamilies = computed(() => (records.families?.length || 0) > 0)
-const errorMessage = computed(() => records.error || '')
+const hasFamilies = computed(() => (familyStore.families?.length || 0) > 0)
+const errorMessage = computed(() => userStore.error || '')
 
 const isSubmitDisabled = computed(() => {
   const nameOk = familyName.value.trim().length > 0
@@ -133,7 +134,7 @@ async function onCreateFamily() {
 
   isSubmitting.value = true
   try {
-    await records.createFamily({
+    await createFamily({
       name: familyName.value.trim()
     })
     await router.replace({ path: '/' })

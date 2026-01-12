@@ -2,17 +2,19 @@
 import { inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useRecordsStore } from '@/stores/records'
+import { useUserStore, logout } from '@/stores'
+import FamilySection from '@/components/profile/FamilySection.vue'
+import ChildrenSection from '@/components/profile/ChildrenSection.vue'
 
 const router = useRouter()
-const store = useRecordsStore()
+const userStore = useUserStore()
 const { t } = useI18n()
 
 const exportData = inject('exportData')
 
 const handleLogout = async () => {
   if (confirm(t('views.profile.logoutConfirm'))) {
-    await store.logout()
+    await logout()
     router.push('/login')
   }
 }
@@ -28,10 +30,16 @@ const handleLogout = async () => {
       <div class="space-y-3">
         <div class="flex items-center justify-between">
           <span class="text-gray-500">{{ t('views.profile.emailLabel') }}</span>
-          <span class="text-gray-800 font-medium">{{ store.user?.email || '-' }}</span>
+          <span class="text-gray-800 font-medium">{{ userStore.user?.email || '-' }}</span>
         </div>
       </div>
     </div>
+
+    <!-- 家庭管理 -->
+    <FamilySection />
+
+    <!-- 宝贝管理 -->
+    <ChildrenSection />
 
     <!-- 功能列表 -->
     <div class="card p-0 overflow-hidden">
