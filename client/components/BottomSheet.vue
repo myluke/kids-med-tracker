@@ -1,6 +1,9 @@
 <script setup>
 import { watch, onMounted, onUnmounted } from 'vue'
 
+// 全局计数器，跟踪有多少个弹层处于打开状态
+let openCount = 0
+
 const props = defineProps({
   show: {
     type: Boolean,
@@ -18,11 +21,17 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
-watch(() => props.show, (val) => {
-  if (val) {
-    document.body.style.overflow = 'hidden'
-  } else {
-    document.body.style.overflow = ''
+watch(() => props.show, (val, oldVal) => {
+  if (val && !oldVal) {
+    openCount++
+    if (openCount === 1) {
+      document.body.style.overflow = 'hidden'
+    }
+  } else if (!val && oldVal) {
+    openCount--
+    if (openCount === 0) {
+      document.body.style.overflow = ''
+    }
   }
 })
 
@@ -38,7 +47,13 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
-  document.body.style.overflow = ''
+  // 只有当前弹层是打开状态时才减少计数
+  if (props.show) {
+    openCount--
+    if (openCount === 0) {
+      document.body.style.overflow = ''
+    }
+  }
 })
 
 const handleOverlayClick = () => {
