@@ -10,15 +10,14 @@ import { useChildrenStore } from './children'
 export const useRecordsStore = defineStore('records', () => {
   const recordsByChild = ref({})
 
-  // 获取其他 store
-  const userStore = useUserStore()
-  const familyStore = useFamilyStore()
-  const childrenStore = useChildrenStore()
+  // 注意：不在顶层缓存其他 store 的引用，避免初始化顺序问题
+  // 在需要时动态获取 store
 
   /**
    * 当前孩子的所有记录
    */
   const currentRecords = computed(() => {
+    const childrenStore = useChildrenStore()
     if (!childrenStore.currentChild) return []
     return recordsByChild.value[childrenStore.currentChild] || []
   })
@@ -95,6 +94,10 @@ export const useRecordsStore = defineStore('records', () => {
    * 添加记录
    */
   const addRecord = async (type, payload) => {
+    const userStore = useUserStore()
+    const familyStore = useFamilyStore()
+    const childrenStore = useChildrenStore()
+
     const familyId = familyStore.currentFamilyId
     const childId = childrenStore.currentChild
 
@@ -160,6 +163,9 @@ export const useRecordsStore = defineStore('records', () => {
    * 删除记录
    */
   const deleteRecordById = async (recordId) => {
+    const familyStore = useFamilyStore()
+    const childrenStore = useChildrenStore()
+
     const familyId = familyStore.currentFamilyId
     if (!familyId) throw new Error('Missing family')
 
@@ -190,6 +196,8 @@ export const useRecordsStore = defineStore('records', () => {
    */
   const exportRecords = ({ locale = 'zh-CN', t } = {}) => {
     if (typeof t !== 'function') return ''
+
+    const childrenStore = useChildrenStore()
 
     let report = `=== ${t('export.reportTitle')} ===\n`
     report += `${t('export.exportedAt')}: ${new Date().toLocaleString(locale)}\n\n`
