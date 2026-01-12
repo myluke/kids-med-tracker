@@ -1,75 +1,57 @@
 import { Hono } from 'hono'
-import { z } from 'zod'
 import type { AppEnv } from '../types'
 import { ok, fail } from '../utils/http'
-import { createServiceClient, getUserFamilies } from '../lib/supabase'
-
-const createFamilySchema = z.object({
-  name: z.string().trim().min(1).max(50)
-})
+import { createServiceClient } from '../lib/supabase'
+import { ServiceError } from '../errors/service-error'
+import * as familiesService from '../services/families'
+import type { ServiceContext } from '../services/types'
 
 const families = new Hono<AppEnv>()
 
+/**
+ * 从 Hono Context 构建 ServiceContext
+ */
+function buildServiceContext(c: { get: (key: string) => unknown; env: AppEnv['Bindings'] }): ServiceContext {
+  const user = c.get('user') as ServiceContext['user'] | undefined
+  if (!user) throw ServiceError.unauthorized()
+
+  return {
+    db: createServiceClient(c.env),
+    user,
+    env: c.env,
+  }
+}
+
+/**
+ * 统一错误处理
+ */
+function handleError(c: Parameters<typeof fail>[0], error: unknown) {
+  if (error instanceof ServiceError) {
+    return fail(c, error.statusCode, error.code, error.message)
+  }
+  console.error('Unexpected error:', error)
+  return fail(c, 500, 'INTERNAL_ERROR', 'An unexpected error occurred')
+}
+
 families.get('/', async c => {
-  const user = c.get('user')
-  if (!user) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
-
-  const serviceClient = createServiceClient(c.env)
-  const results = await getUserFamilies(serviceClient, user.id)
-
-  return ok(c, results)
+  try {
+    const ctx = buildServiceContext(c)
+    const data = await familiesService.listFamilies(ctx)
+    return ok(c, data)
+  } catch (error) {
+    return handleError(c, error)
+  }
 })
 
 families.post('/', async c => {
-  const user = c.get('user')
-  if (!user) return fail(c, 401, 'UNAUTHENTICATED', 'Missing user')
-
-  const json = await c.req.json().catch(() => null)
-  const parsed = createFamilySchema.safeParse(json)
-  if (!parsed.success) return fail(c, 400, 'BAD_REQUEST', 'Invalid request body')
-
-  const serviceClient = createServiceClient(c.env)
-
-  // 使用 Service Client 检查用户创建的家庭数量（绕过 RLS）
-  const { count, error: countError } = await serviceClient
-    .from('families')
-    .select('*', { count: 'exact', head: true })
-    .eq('created_by_user_id', user.id)
-
-  if (countError) {
-    console.error('Failed to count families:', countError)
-    return fail(c, 500, 'DB_ERROR', 'Failed to check family limit')
+  try {
+    const ctx = buildServiceContext(c)
+    const json = await c.req.json().catch(() => ({}))
+    const data = await familiesService.createFamily(ctx, json)
+    return ok(c, data, 201)
+  } catch (error) {
+    return handleError(c, error)
   }
-
-  if ((count || 0) >= 3) {
-    return fail(c, 403, 'FAMILY_LIMIT', 'Family creation limit reached')
-  }
-
-  // 使用 Service Client 创建家庭（绕过 RLS，因为新用户还不是任何家庭的成员）
-  const { data: family, error: createError } = await serviceClient
-    .from('families')
-    .insert({ name: parsed.data.name, created_by_user_id: user.id })
-    .select()
-    .single()
-
-  if (createError) {
-    console.error('Failed to create family:', createError)
-    return fail(c, 500, 'DB_ERROR', 'Failed to create family')
-  }
-
-  // 使用 Service Client 将创建者加入家庭
-  const { error: memberError } = await serviceClient
-    .from('family_members')
-    .insert({ family_id: family.id, user_id: user.id, role: 'owner' })
-
-  if (memberError) {
-    console.error('Failed to add member:', memberError)
-    // 回滚：删除刚创建的家庭
-    await serviceClient.from('families').delete().eq('id', family.id)
-    return fail(c, 500, 'DB_ERROR', 'Failed to create family')
-  }
-
-  return ok(c, { id: family.id, name: family.name, createdAt: family.created_at }, 201)
 })
 
 export default families

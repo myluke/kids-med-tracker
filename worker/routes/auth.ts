@@ -1,8 +1,11 @@
 import { Hono } from 'hono'
 import type { AppEnv } from '../types'
 import { ok, fail } from '../utils/http'
-import { createServiceClient, getUserFamilies } from '../lib/supabase'
+import { createServiceClient } from '../lib/supabase'
+import { ServiceError } from '../errors/service-error'
 import { optionalUser } from '../middleware/auth'
+import * as authService from '../services/auth'
+import type { OptionalUserContext } from '../services/types'
 
 const auth = new Hono<AppEnv>()
 
@@ -11,44 +14,41 @@ auth.use('/me', optionalUser)
 auth.use('/logout', optionalUser)
 
 /**
- * 验证邮箱格式
+ * 从 Hono Context 构建 OptionalUserContext
  */
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+function buildOptionalUserContext(c: { get: (key: string) => unknown; env: AppEnv['Bindings'] }): OptionalUserContext {
+  const user = c.get('user') as OptionalUserContext['user']
+
+  return {
+    db: createServiceClient(c.env),
+    user,
+    env: c.env,
+  }
+}
+
+/**
+ * 统一错误处理
+ */
+function handleError(c: Parameters<typeof fail>[0], error: unknown) {
+  if (error instanceof ServiceError) {
+    return fail(c, error.statusCode, error.code, error.message)
+  }
+  console.error('Unexpected error:', error)
+  return fail(c, 500, 'INTERNAL_ERROR', 'An unexpected error occurred')
 }
 
 /**
  * POST /api/auth/send-magic-link
  * 发送 Magic Link 到邮箱
- * 注意：前端也可以直接调用 Supabase SDK 发送，此端点作为备选
  */
 auth.post('/send-magic-link', async c => {
-  const body = await c.req.json<{ email?: string }>()
-  const { email } = body
-
-  if (!email || !isValidEmail(email)) {
-    return fail(c, 400, 'INVALID_EMAIL', 'Please provide a valid email address')
-  }
-
   try {
-    const serviceClient = createServiceClient(c.env)
-
-    const { error } = await serviceClient.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${c.env.APP_URL}/auth/callback`
-      }
-    })
-
-    if (error) {
-      console.error('Magic link error:', error)
-      return fail(c, 500, 'EMAIL_FAILED', 'Failed to send magic link')
-    }
-
-    return ok(c, { sent: true })
-  } catch (err) {
-    console.error('Failed to send magic link:', err)
-    return fail(c, 500, 'EMAIL_FAILED', 'Failed to send magic link')
+    const ctx = buildOptionalUserContext(c)
+    const json = await c.req.json<{ email?: string }>().catch(() => ({}))
+    const data = await authService.sendMagicLink(ctx, { email: json.email || '' })
+    return ok(c, data)
+  } catch (error) {
+    return handleError(c, error)
   }
 })
 
@@ -57,8 +57,8 @@ auth.post('/send-magic-link', async c => {
  * 登出
  */
 auth.post('/logout', async c => {
-  // 服务端不需要做特殊处理，客户端会清除本地 session
-  return ok(c, { loggedOut: true })
+  const data = authService.logout()
+  return ok(c, data)
 })
 
 /**
@@ -66,20 +66,12 @@ auth.post('/logout', async c => {
  * 获取当前登录用户信息
  */
 auth.get('/me', async c => {
-  const user = c.get('user')
-
-  if (!user) {
-    return ok(c, { user: null, families: [] })
-  }
-
   try {
-    const serviceClient = createServiceClient(c.env)
-    const families = await getUserFamilies(serviceClient, user.id)
-
-    return ok(c, { user, families })
-  } catch (err) {
-    console.error('Failed to get user:', err)
-    return ok(c, { user: null, families: [] })
+    const ctx = buildOptionalUserContext(c)
+    const data = await authService.getMe(ctx)
+    return ok(c, data)
+  } catch (error) {
+    return handleError(c, error)
   }
 })
 
