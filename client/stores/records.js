@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+import { defineStore, storeToRefs } from 'pinia'
 import { ref, computed } from 'vue'
 import { safeJsonParse } from '@/services/api'
 import * as recordService from '@/services/recordService'
@@ -10,16 +10,16 @@ import { useChildrenStore } from './children'
 export const useRecordsStore = defineStore('records', () => {
   const recordsByChild = ref({})
 
-  // 注意：不在顶层缓存其他 store 的引用，避免初始化顺序问题
-  // 在需要时动态获取 store
+  // 在 setup 顶层获取其他 store，使用 storeToRefs 确保响应式追踪正确
+  const childrenStore = useChildrenStore()
+  const { currentChild, children } = storeToRefs(childrenStore)
 
   /**
    * 当前孩子的所有记录
    */
   const currentRecords = computed(() => {
-    const childrenStore = useChildrenStore()
-    if (!childrenStore.currentChild) return []
-    return recordsByChild.value[childrenStore.currentChild] || []
+    if (!currentChild.value) return []
+    return recordsByChild.value[currentChild.value] || []
   })
 
   /**
@@ -96,10 +96,9 @@ export const useRecordsStore = defineStore('records', () => {
   const addRecord = async (type, payload) => {
     const userStore = useUserStore()
     const familyStore = useFamilyStore()
-    const childrenStore = useChildrenStore()
 
     const familyId = familyStore.currentFamilyId
-    const childId = childrenStore.currentChild
+    const childId = currentChild.value
 
     if (!familyId || !childId) {
       throw new Error('Missing family or child')
@@ -164,14 +163,13 @@ export const useRecordsStore = defineStore('records', () => {
    */
   const deleteRecordById = async (recordId) => {
     const familyStore = useFamilyStore()
-    const childrenStore = useChildrenStore()
 
     const familyId = familyStore.currentFamilyId
     if (!familyId) throw new Error('Missing family')
 
     await recordService.deleteRecord({ recordId, familyId })
 
-    const childId = childrenStore.currentChild
+    const childId = currentChild.value
     if (!childId) return
 
     recordsByChild.value = {
@@ -197,12 +195,10 @@ export const useRecordsStore = defineStore('records', () => {
   const exportRecords = ({ locale = 'zh-CN', t } = {}) => {
     if (typeof t !== 'function') return ''
 
-    const childrenStore = useChildrenStore()
-
     let report = `=== ${t('export.reportTitle')} ===\n`
     report += `${t('export.exportedAt')}: ${new Date().toLocaleString(locale)}\n\n`
 
-    childrenStore.children.forEach(child => {
+    children.value.forEach(child => {
       const childRecords = recordsByChild.value[child.id] || []
       const sorted = [...childRecords].sort((a, b) =>
         new Date(b.time) - new Date(a.time)
