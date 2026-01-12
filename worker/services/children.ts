@@ -6,11 +6,11 @@ import { checkFamilyMembership } from '../lib/supabase'
 // ============ Zod Schemas ============
 
 export const listChildrenInputSchema = z.object({
-  familyId: z.string().uuid(),
+  familyId: z.string().min(1),
 })
 
 export const createChildInputSchema = z.object({
-  familyId: z.string().uuid(),
+  familyId: z.string().min(1),
   name: z.string().trim().min(1).max(50),
   emoji: z.string().trim().optional(),
   color: z.string().trim().optional(),
@@ -19,8 +19,8 @@ export const createChildInputSchema = z.object({
 })
 
 export const updateChildInputSchema = z.object({
-  childId: z.string().uuid(),
-  familyId: z.string().uuid(),
+  childId: z.string().min(1),
+  familyId: z.string().min(1),
   name: z.string().trim().min(1).max(50).optional(),
   emoji: z.string().trim().optional(),
   color: z.string().trim().optional(),
@@ -29,8 +29,8 @@ export const updateChildInputSchema = z.object({
 })
 
 export const deleteChildInputSchema = z.object({
-  childId: z.string().uuid(),
-  familyId: z.string().uuid(),
+  childId: z.string().min(1),
+  familyId: z.string().min(1),
 })
 
 // ============ 类型定义 ============

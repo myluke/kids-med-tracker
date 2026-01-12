@@ -8,29 +8,29 @@ import { checkFamilyMembership } from '../lib/supabase'
 export const recordTypeSchema = z.enum(['med', 'cough', 'temp', 'note'])
 
 export const listRecordsInputSchema = z.object({
-  familyId: z.string().uuid(),
-  childId: z.string().uuid().optional(),
-  since: z.string().datetime().optional(),
+  familyId: z.string().min(1),
+  childId: z.string().min(1).optional(),
+  since: z.string().optional(),
   limit: z.number().int().min(1).max(500).default(200),
 })
 
 export const createRecordInputSchema = z.object({
-  familyId: z.string().uuid(),
-  childId: z.string().uuid(),
+  familyId: z.string().min(1),
+  childId: z.string().min(1),
   type: recordTypeSchema,
   time: z.string().min(1),
   payload: z.unknown().optional(),
 })
 
 export const updateRecordInputSchema = z.object({
-  recordId: z.string().uuid(),
-  familyId: z.string().uuid(),
+  recordId: z.string().min(1),
+  familyId: z.string().min(1),
   payload: z.unknown(),
 })
 
 export const deleteRecordInputSchema = z.object({
-  recordId: z.string().uuid(),
-  familyId: z.string().uuid(),
+  recordId: z.string().min(1),
+  familyId: z.string().min(1),
 })
 
 // ============ 类型定义 ============

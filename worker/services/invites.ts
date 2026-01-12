@@ -7,7 +7,7 @@ import { randomTokenBase64Url, sha256Hex } from '../utils/crypto'
 // ============ Zod Schemas ============
 
 export const createInviteInputSchema = z.object({
-  familyId: z.string().uuid(),
+  familyId: z.string().min(1),
 })
 
 export const acceptInviteInputSchema = z.object({
