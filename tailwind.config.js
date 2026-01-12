@@ -7,20 +7,29 @@ export default {
   theme: {
     extend: {
       colors: {
+        // 背景色 - 浅蓝灰白（来自 logo 背景）
         warm: {
-          50: '#FFF8F0',
-          100: '#FFE4D6',
-          200: '#FFF0E6'
+          50: '#F8FAFC',
+          100: '#EEF2F7',
+          200: '#E2E8F0'
         },
+        // 主色/大宝 - 蓝紫色（来自小熊）
         dabo: {
-          light: '#E8F2FC',
-          DEFAULT: '#4A90D9',
-          dark: '#2563EB'
+          light: '#E8ECF8',
+          DEFAULT: '#8B9DD9',
+          dark: '#6B7EC9'
         },
+        // 二宝 - 珊瑚粉色（来自温度计）
         erbao: {
           light: '#FDE8EC',
-          DEFAULT: '#E85D75',
-          dark: '#DC2626'
+          DEFAULT: '#F5A5A5',
+          dark: '#E87F7F'
+        },
+        // 强调色 - 薄荷绿（来自护士帽）
+        mint: {
+          light: '#E5F6F2',
+          DEFAULT: '#7DD3C0',
+          dark: '#5AB8A8'
         }
       },
       fontFamily: {

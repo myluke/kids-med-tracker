@@ -39,28 +39,28 @@ const getRecordDisplay = (record) => {
     case 'med':
       return {
         icon: '💊',
-        iconBg: 'bg-blue-100',
+        iconBg: 'bg-dabo-light',
         main: record.drug,
         sub: record.dosage + (record.temp ? t('history.record.medTemp', { temp: record.temp }) : '')
       }
     case 'cough':
       return {
         icon: '🫁',
-        iconBg: 'bg-yellow-100',
+        iconBg: 'bg-mint-light',
         main: t('history.record.coughMain', { level: record.level }),
         sub: record.note || ''
       }
     case 'temp':
       return {
         icon: '🌡️',
-        iconBg: 'bg-red-100',
+        iconBg: 'bg-erbao-light',
         main: t('history.record.tempMain', { value: record.value }),
         sub: record.value >= 38.5 ? t('history.record.tempStatus.fever') : (record.value >= 37.3 ? t('history.record.tempStatus.lowFever') : t('history.record.tempStatus.normal'))
       }
     case 'note':
       return {
         icon: '📝',
-        iconBg: 'bg-blue-100',
+        iconBg: 'bg-dabo-light',
         main: t('history.record.note'),
         sub: record.content
       }
@@ -142,9 +142,9 @@ const deleteRecord = (recordId) => {
           <div>{{ formatTime(record.time).time }}</div>
         </div>
 
-        <button 
+        <button
           v-if="canDeleteRecord(record)"
-          class="ml-2 px-2 py-1 text-gray-300 hover:text-red-500 transition-colors"
+          class="ml-2 px-2 py-1 text-gray-300 hover:text-erbao transition-colors"
           @click="deleteRecord(record.id)"
         >
           ×

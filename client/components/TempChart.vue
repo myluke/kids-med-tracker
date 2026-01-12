@@ -31,7 +31,7 @@ const { t, locale } = useI18n()
 
 const currentColor = computed(() => {
   const child = store.children.find(c => c.id === store.currentChild)
-  return child?.color || '#4A90D9'
+  return child?.color || '#8B9DD9'
 })
 
 const tempData = computed(() => store.getTempData(24))

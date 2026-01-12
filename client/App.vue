@@ -55,6 +55,9 @@ const exportData = () => {
   toast(t('toast.exported'))
 }
 
+// 提供导出功能给子组件
+provide('exportData', exportData)
+
 // 当前主题色（根据选中的孩子）
 const themeClass = computed(() => {
   return store.currentChild === 'child2' ? 'theme-erbao' : 'theme-dabo'
@@ -67,7 +70,7 @@ const themeClass = computed(() => {
     class="min-h-screen"
   >
     <!-- Header -->
-    <header class="bg-gradient-to-br from-warm-100 to-warm-200 px-5 pt-5 pb-8 rounded-b-3xl relative">
+    <header class="bg-gradient-to-br from-dabo-light to-warm-200 px-5 pt-5 pb-8 rounded-b-3xl relative">
       <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
         <img
           src="/logo.svg"
@@ -114,12 +117,13 @@ const themeClass = computed(() => {
         <span class="text-2xl">📊</span>
         <span class="text-xs font-medium">{{ t('nav.stats') }}</span>
       </button>
-      <button 
-        class="flex flex-col items-center gap-1 px-4 py-2 text-gray-400 transition-colors hover:text-dabo"
-        @click="exportData"
+      <button
+        class="flex flex-col items-center gap-1 px-4 py-2 transition-colors"
+        :class="route.path === '/profile' ? 'text-dabo' : 'text-gray-400'"
+        @click="router.push('/profile')"
       >
-        <span class="text-2xl">📤</span>
-        <span class="text-xs font-medium">{{ t('nav.export') }}</span>
+        <span class="text-2xl">👤</span>
+        <span class="text-xs font-medium">{{ t('nav.profile') }}</span>
       </button>
     </nav>
 
@@ -149,20 +153,26 @@ const themeClass = computed(() => {
   opacity: 0;
 }
 
-/* 二宝主题 */
+/* 二宝主题 - 珊瑚粉色系 */
 .theme-erbao :deep(.text-dabo) {
   @apply text-erbao;
 }
 .theme-erbao :deep(.bg-dabo) {
   @apply bg-erbao;
 }
+.theme-erbao :deep(.bg-dabo-light) {
+  @apply bg-erbao-light;
+}
 .theme-erbao :deep(.border-dabo) {
   @apply border-erbao;
 }
 .theme-erbao :deep(.from-dabo) {
-  --tw-gradient-from: #E85D75;
+  --tw-gradient-from: #F5A5A5;
+}
+.theme-erbao :deep(.from-dabo-light) {
+  --tw-gradient-from: #FDE8EC;
 }
 .theme-erbao :deep(.to-dabo-dark) {
-  --tw-gradient-to: #DC2626;
+  --tw-gradient-to: #E87F7F;
 }
 </style>

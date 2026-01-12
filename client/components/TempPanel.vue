@@ -13,7 +13,7 @@ const quickTemps = [36.5, 37.0, 37.5, 38.0, 38.5, 39.0, 39.5, 40.0]
 
 const currentChildColor = computed(() => {
   const child = store.children.find(c => c.id === store.currentChild)
-  return child?.color || '#4A90D9'
+  return child?.color || '#8B9DD9'
 })
 
 const setQuickTemp = (value) => {

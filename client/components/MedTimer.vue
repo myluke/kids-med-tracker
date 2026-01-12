@@ -75,14 +75,14 @@ const statusClasses = computed(() => {
   const status = timerData.value.status
   return {
     badge: {
-      safe: 'bg-green-100 text-green-800',
+      safe: 'bg-mint-light text-mint-dark',
       warning: 'bg-yellow-100 text-yellow-800',
-      danger: 'bg-red-100 text-red-800'
+      danger: 'bg-erbao-light text-erbao-dark'
     }[status],
     time: {
-      safe: 'text-green-500',
+      safe: 'text-mint',
       warning: 'text-yellow-500',
-      danger: 'text-yellow-500'
+      danger: 'text-erbao'
     }[status]
   }
 })

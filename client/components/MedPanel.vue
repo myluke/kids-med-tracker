@@ -13,7 +13,7 @@ const temp = ref('')
 
 const currentChildColor = computed(() => {
   const child = store.children.find(c => c.id === store.currentChild)
-  return child?.color || '#4A90D9'
+  return child?.color || '#8B9DD9'
 })
 
 const selectMed = (med) => {

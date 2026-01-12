@@ -42,7 +42,7 @@ watchEffect(() => {
   store.createChild({
     name: name.trim(),
     emoji: '👶',
-    color: '#4A90D9'
+    color: '#8B9DD9'
   }).then(() => {
     if (toast) toast(t('toast.childAdded', { name: name.trim() }))
   }).catch(() => null)

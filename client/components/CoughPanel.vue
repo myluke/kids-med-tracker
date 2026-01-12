@@ -8,9 +8,9 @@ const note = ref('')
 const { t } = useI18n()
 
 const coughLevels = [
-  { level: '轻微', icon: '😊', color: 'green' },
+  { level: '轻微', icon: '😊', color: 'mint' },
   { level: '中度', icon: '😐', color: 'yellow' },
-  { level: '剧烈', icon: '😣', color: 'red' }
+  { level: '剧烈', icon: '😣', color: 'erbao' }
 ]
 
 const submit = (level) => {
@@ -42,9 +42,9 @@ const submit = (level) => {
         class="flex-1 py-5 border-2 rounded-xl text-center transition-all active:scale-95"
         :class="{
           'border-gray-200 bg-white': true,
-          'active:border-green-400 active:bg-green-50': item.color === 'green',
+          'active:border-mint active:bg-mint-light': item.color === 'mint',
           'active:border-yellow-400 active:bg-yellow-50': item.color === 'yellow',
-          'active:border-red-400 active:bg-red-50': item.color === 'red'
+          'active:border-erbao active:bg-erbao-light': item.color === 'erbao'
         }"
         @click="submit(item.level)"
       >

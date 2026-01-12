@@ -6,7 +6,7 @@
   "nav": {
     "home": "Home",
     "stats": "Stats",
-    "export": "Export"
+    "profile": "Me"
   },
   "common": {
     "confirm": "Confirm",
@@ -199,6 +199,15 @@
       "acceptButton": "Accept",
       "success": "Joined",
       "backToHome": "Back to home"
+    },
+    "profile": {
+      "title": "Me",
+      "accountSection": "Account",
+      "emailLabel": "Email",
+      "exportData": "Export Data",
+      "exportDesc": "Export all records to a file",
+      "logout": "Log Out",
+      "logoutConfirm": "Are you sure you want to log out?"
     }
   }
 }

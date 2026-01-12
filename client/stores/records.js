@@ -194,7 +194,7 @@ export const useRecordsStore = defineStore('records', () => {
     const list = Array.isArray(result) ? result : []
     children.value = list.map(c => ({
       ...c,
-      lightColor: c.lightColor || lightenHex(c.color || '#4A90D9')
+      lightColor: c.lightColor || lightenHex(c.color || '#8B9DD9')
     }))
   }
 

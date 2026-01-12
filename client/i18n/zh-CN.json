@@ -6,7 +6,7 @@
   "nav": {
     "home": "首页",
     "stats": "统计",
-    "export": "导出"
+    "profile": "我的"
   },
   "common": {
     "confirm": "确认",
@@ -199,6 +199,15 @@
       "acceptButton": "接受邀请",
       "success": "已加入家庭",
       "backToHome": "返回首页"
+    },
+    "profile": {
+      "title": "我的",
+      "accountSection": "账号信息",
+      "emailLabel": "邮箱",
+      "exportData": "导出数据",
+      "exportDesc": "将所有记录导出为文件",
+      "logout": "退出登录",
+      "logoutConfirm": "确定要退出登录吗？"
     }
   }
 }
