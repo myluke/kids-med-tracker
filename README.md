@@ -98,53 +98,138 @@ pnpm worker:dev
 
 ## 📦 部署指南
 
-### Cloudflare Workers（推荐）
+本项目使用 **Supabase**（数据库 + 认证）+ **Cloudflare Workers**（托管前端 + API）架构。
 
-本项目使用 **Cloudflare Worker 托管前端静态资源 + 同域 API**，并使用 **Supabase** 存储数据和认证。
+### 前置要求
 
-#### 1) 准备资源
+- Node.js >= 18
+- pnpm >= 8
+- [Cloudflare 账号](https://dash.cloudflare.com/)
+- [Supabase 账号](https://supabase.com/)
 
-1. 创建 Supabase 项目（https://supabase.com）
-2. 创建 Turnstile site（绑定你的域名）
+---
 
-#### 2) 配置 `wrangler.toml`
+### 第一步：创建 Supabase 项目
 
-出于安全考虑，`wrangler.toml` 默认使用占位符：
-- `[vars]` 的 `SUPABASE_URL`、`SUPABASE_ANON_KEY`、`TURNSTILE_SITE_KEY`
+1. 登录 [Supabase Dashboard](https://supabase.com/dashboard)
+2. 点击 **New Project**，填写项目名称
+3. 选择数据库区域（建议选择离用户最近的区域，如 `ap-northeast-1` 东京）
+4. 设置数据库密码（妥善保管）
+5. 等待项目初始化完成（约 1-2 分钟）
 
-你可以选择两种方式之一：
-- 方式 A：直接把占位符替换为你自己的值（注意不要提交到公共仓库）
-- 方式 B：保持 `wrangler.toml` 为占位符，使用 Cloudflare Dashboard / CI 环境变量管理（更推荐）
+### 第二步：初始化数据库
 
-#### 3) 配置 Worker secrets（不要提交到仓库）
+1. 进入 Supabase Dashboard → **SQL Editor**
+2. 点击 **New Query**
+3. 复制 [`supabase/schema.sql`](./supabase/schema.sql) 文件的全部内容
+4. 粘贴到编辑器并点击 **Run** 执行
+5. 确认输出 `Success. No rows returned` 表示执行成功
+
+### 第三步：配置 Supabase 认证
+
+1. 进入 **Authentication** → **Providers**
+2. 确认 **Email** 已启用（默认启用）
+3. 进入 **Authentication** → **Email Templates**
+4. （可选）自定义 OTP 验证码邮件模板
+
+### 第四步：获取 Supabase 密钥
+
+进入 **Settings** → **API**，记录以下信息：
+
+| 名称 | 用途 | 安全级别 |
+|------|------|----------|
+| Project URL | `SUPABASE_URL` | 公开 |
+| anon/public key | `SUPABASE_ANON_KEY` | 公开（前端可用） |
+| service_role key | `SUPABASE_SERVICE_ROLE_KEY` | **机密**（仅后端） |
+
+---
+
+### 第五步：配置 Cloudflare Workers
+
+#### 5.1 安装 Wrangler CLI
 
 ```bash
-# 登录 Cloudflare
+pnpm add -g wrangler
 wrangler login
+```
 
-# Supabase Service Role Key（后端密钥）
+#### 5.2 修改 `wrangler.toml`
+
+编辑项目根目录的 `wrangler.toml`，修改以下配置：
+
+```toml
+name = "kids-med-tracker"  # 你的 Worker 名称
+main = "worker/index.ts"
+compatibility_date = "2026-01-11"
+
+assets = { directory = "./dist", binding = "ASSETS" }
+
+[vars]
+SUPABASE_URL = "https://你的项目ID.supabase.co"  # 替换为你的 Project URL
+APP_URL = "https://你的域名.com"                  # 替换为你的应用域名
+ENV = "production"
+```
+
+#### 5.3 配置 Worker Secrets
+
+以下密钥必须通过命令行设置（不要写入配置文件）：
+
+```bash
+# Supabase anon key（前端 RLS 校验用）
+wrangler secret put SUPABASE_ANON_KEY
+
+# Supabase service role key（后端特权操作用）
 wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 
-# Turnstile（后端密钥）
-wrangler secret put TURNSTILE_SECRET_KEY
-
-# 邀请链接 token pepper（建议随机生成一串）
+# 邀请链接 token 加密盐（随机生成一串字符）
 wrangler secret put INVITE_TOKEN_PEPPER
 ```
 
-#### 4) 构建并部署 Worker
+#### 5.4（可选）配置 Turnstile 人机验证
+
+如需启用 Cloudflare Turnstile 防滥用：
+
+1. 在 [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Turnstile** 创建站点
+2. 获取 Site Key 和 Secret Key
+3. 配置：
 
 ```bash
+# 在 wrangler.toml [vars] 中添加（公开）
+TURNSTILE_SITE_KEY = "你的站点密钥"
+
+# 通过命令行设置（机密）
+wrangler secret put TURNSTILE_SECRET_KEY
+```
+
+---
+
+### 第六步：构建并部署
+
+```bash
+# 安装依赖
 pnpm install
+
+# 构建前端（输出到 dist/）
 pnpm build
+
+# 部署 Worker
 pnpm worker:deploy
 ```
+
+部署成功后，Wrangler 会输出你的 Worker URL（如 `https://kids-med-tracker.你的账号.workers.dev`）。
+
+### 第七步：绑定自定义域名（可选）
+
+1. 进入 [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages**
+2. 选择你的 Worker → **Settings** → **Triggers**
+3. 点击 **Add Custom Domain**，输入你的域名
+4. 按提示完成 DNS 配置
 
 ---
 
 ### 其他平台
 
-由于依赖 Cloudflare Workers + Supabase + Turnstile，本项目不再推荐部署到 Vercel/Netlify/纯静态托管。
+由于依赖 Cloudflare Workers + Supabase，本项目不推荐部署到 Vercel/Netlify/纯静态托管。
 
 ## 🛠️ 技术栈
 
@@ -182,8 +267,11 @@ kids-med-tracker/
 ├── worker/                   # 后端 Cloudflare Worker
 │   ├── index.ts              # Worker 入口
 │   ├── routes/               # Hono API 路由
+│   ├── services/             # 业务逻辑层
 │   ├── middleware/           # 认证中间件
 │   └── lib/                  # Supabase 客户端
+├── supabase/                 # 数据库相关
+│   └── schema.sql            # 完整数据库 Schema（表 + RLS 策略）
 ├── wrangler.toml             # Worker 配置
 ├── vite.config.js            # 前端构建配置
 └── package.json
