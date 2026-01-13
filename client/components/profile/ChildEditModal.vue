@@ -4,7 +4,10 @@ import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   show: Boolean,
-  child: Object // null for create, object for edit
+  child: {
+    type: Object,
+    default: null
+  } // null for create, object for edit
 })
 
 const emit = defineEmits(['close', 'save'])

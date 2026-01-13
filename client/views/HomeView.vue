@@ -137,49 +137,49 @@ const submitTemp = (value) => {
 
     <!-- 历史记录 -->
     <HistoryList />
-  </div>
 
-  <!-- 用药弹层 -->
-  <BottomSheet
-    :show="showMedPanel"
-    @close="showMedPanel = false"
-  >
-    <MedPanel
+    <!-- 用药弹层 -->
+    <BottomSheet
+      :show="showMedPanel"
       @close="showMedPanel = false"
-      @submit="submitMed"
-    />
-  </BottomSheet>
+    >
+      <MedPanel
+        @close="showMedPanel = false"
+        @submit="submitMed"
+      />
+    </BottomSheet>
 
-  <!-- 咳嗽弹层 -->
-  <BottomSheet
-    :show="showCoughPanel"
-    @close="showCoughPanel = false"
-  >
-    <CoughPanel
+    <!-- 咳嗽弹层 -->
+    <BottomSheet
+      :show="showCoughPanel"
       @close="showCoughPanel = false"
-      @submit="submitCough"
-    />
-  </BottomSheet>
+    >
+      <CoughPanel
+        @close="showCoughPanel = false"
+        @submit="submitCough"
+      />
+    </BottomSheet>
 
-  <!-- 体温弹层 -->
-  <BottomSheet
-    :show="showTempPanel"
-    @close="showTempPanel = false"
-  >
-    <TempPanel
+    <!-- 体温弹层 -->
+    <BottomSheet
+      :show="showTempPanel"
       @close="showTempPanel = false"
-      @submit="submitTemp"
-    />
-  </BottomSheet>
+    >
+      <TempPanel
+        @close="showTempPanel = false"
+        @submit="submitTemp"
+      />
+    </BottomSheet>
 
-  <!-- 备注弹层 -->
-  <BottomSheet
-    :show="showNotePanel"
-    @close="showNotePanel = false"
-  >
-    <NotePanel
+    <!-- 备注弹层 -->
+    <BottomSheet
+      :show="showNotePanel"
       @close="showNotePanel = false"
-      @submit="submitNote"
-    />
-  </BottomSheet>
+    >
+      <NotePanel
+        @close="showNotePanel = false"
+        @submit="submitNote"
+      />
+    </BottomSheet>
+  </div>
 </template>
