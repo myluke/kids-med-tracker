@@ -58,6 +58,18 @@
 - **家庭协作**：同一家庭多成员共享记录
 - **隐私优先**：通过 Supabase Auth 登录访问，数据隔离到家庭
 
+## 📱 应用截图
+
+<p align="center">
+  <img src="./docs/2.png" width="250" alt="首页 - 快捷记录与退烧药计时">
+  <img src="./docs/3.png" width="250" alt="统计 - 体温趋势与咳嗽频次">
+  <img src="./docs/1.png" width="250" alt="我的 - 家庭与宝贝管理">
+</p>
+
+<p align="center">
+  <em>首页 · 统计 · 我的</em>
+</p>
+
 ## 🚀 快速开始
 
 ### 环境要求
