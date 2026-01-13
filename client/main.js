@@ -7,35 +7,59 @@ import './style.css'
 
 const pinia = createPinia()
 
-const CHUNK_ERROR_RELOAD_KEY = 'kids-med-tracker:chunk-reload-at'
+const CHUNK_RECOVERY_KEY = 'kids-med-tracker:chunk-recovery'
+const CHUNK_RECOVERY_WINDOW_MS = 30_000
 
 function isChunkLoadError(error) {
   const message = error instanceof Error ? error.message : String(error || '')
   return /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk|ChunkLoadError/i.test(message)
 }
 
-function markReloadAttempt() {
+function readChunkRecoveryState() {
+  const now = Date.now()
   try {
-    sessionStorage.setItem(CHUNK_ERROR_RELOAD_KEY, String(Date.now()))
+    const raw = sessionStorage.getItem(CHUNK_RECOVERY_KEY)
+    if (!raw) return { ts: 0, count: 0 }
+
+    if (/^\d+$/.test(raw)) {
+      const ts = Number(raw)
+      if (!ts || now - ts > CHUNK_RECOVERY_WINDOW_MS) {
+        clearChunkRecoveryState()
+        return { ts: 0, count: 0 }
+      }
+      return { ts, count: 1 }
+    }
+
+    const parsed = JSON.parse(raw)
+    const ts = typeof parsed?.ts === 'number' ? parsed.ts : 0
+    const count = typeof parsed?.count === 'number' ? parsed.count : 0
+
+    if (!ts || now - ts > CHUNK_RECOVERY_WINDOW_MS) {
+      clearChunkRecoveryState()
+      return { ts: 0, count: 0 }
+    }
+
+    return {
+      ts,
+      count: Math.max(0, count)
+    }
+  } catch {
+    clearChunkRecoveryState()
+    return { ts: 0, count: 0 }
+  }
+}
+
+function writeChunkRecoveryState(state) {
+  try {
+    sessionStorage.setItem(CHUNK_RECOVERY_KEY, JSON.stringify(state))
   } catch {
     // ignore
   }
 }
 
-function hadRecentReloadAttempt() {
+function clearChunkRecoveryState() {
   try {
-    const value = sessionStorage.getItem(CHUNK_ERROR_RELOAD_KEY)
-    const timestamp = value ? Number(value) : 0
-    if (!timestamp) return false
-    return Date.now() - timestamp < 30_000
-  } catch {
-    return false
-  }
-}
-
-function clearReloadAttempt() {
-  try {
-    sessionStorage.removeItem(CHUNK_ERROR_RELOAD_KEY)
+    sessionStorage.removeItem(CHUNK_RECOVERY_KEY)
   } catch {
     // ignore
   }
@@ -61,6 +85,38 @@ async function hardReloadTo(path) {
   }
 
   window.location.assign(path)
+}
+
+let chunkRecoveryInProgress = false
+
+function recoverFromChunkError(target) {
+  if (chunkRecoveryInProgress) return
+  chunkRecoveryInProgress = true
+
+  const state = readChunkRecoveryState()
+  const now = Date.now()
+
+  if (navigator.onLine === false) {
+    chunkRecoveryInProgress = false
+    return
+  }
+
+  if (state.count >= 2) {
+    chunkRecoveryInProgress = false
+    return
+  }
+
+  writeChunkRecoveryState({
+    ts: now,
+    count: state.count + 1
+  })
+
+  if (state.count >= 1) {
+    void hardReloadTo(target)
+    return
+  }
+
+  window.location.assign(target)
 }
 
 // 路由配置
@@ -114,21 +170,25 @@ const router = createRouter({
 
 router.onError((error, to) => {
   if (!isChunkLoadError(error)) {
-    // eslint-disable-next-line no-console
+     
     console.error(error)
     return
   }
 
-  const target = to?.fullPath || window.location.pathname || '/'
+  const target = to?.fullPath || `${window.location.pathname}${window.location.search}${window.location.hash}` || '/'
+  recoverFromChunkError(target)
+})
 
-  if (hadRecentReloadAttempt()) {
-    clearReloadAttempt()
-    void hardReloadTo(target)
-    return
-  }
+window.addEventListener('unhandledrejection', event => {
+  if (!isChunkLoadError(event.reason)) return
+  const target = `${window.location.pathname}${window.location.search}${window.location.hash}` || '/'
+  recoverFromChunkError(target)
+})
 
-  markReloadAttempt()
-  window.location.assign(target)
+window.addEventListener('error', event => {
+  if (!isChunkLoadError(event.error || event.message)) return
+  const target = `${window.location.pathname}${window.location.search}${window.location.hash}` || '/'
+  recoverFromChunkError(target)
 })
 
 // 路由守卫：检查认证状态
@@ -161,7 +221,7 @@ app.use(i18n)
 app.use(router)
 
 router.isReady().then(() => {
-  clearReloadAttempt()
+  clearChunkRecoveryState()
 })
 
 app.mount('#app')
