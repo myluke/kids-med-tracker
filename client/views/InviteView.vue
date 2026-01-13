@@ -1,3 +1,56 @@
+<script setup>
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { useUserStore, acceptInvite } from '@/stores'
+
+const route = useRoute()
+const router = useRouter()
+const { t } = useI18n()
+const userStore = useUserStore()
+
+const token = computed(() => String(route.params.token || '').trim())
+const tokenPreview = computed(() => {
+  if (!token.value) return t('views.invite.tokenPreviewEmpty')
+  const head = token.value.slice(0, 6)
+  const tail = token.value.slice(-4)
+  return `${head}…${tail}`
+})
+
+const isSubmitting = ref(false)
+const isSuccess = ref(false)
+
+const errorMessage = computed(() => userStore.error || '')
+
+const isAcceptDisabled = computed(() => {
+  const tokenOk = !!token.value
+  return isSubmitting.value || isSuccess.value || !tokenOk
+})
+
+async function onAccept() {
+  if (isAcceptDisabled.value) return
+
+  isSubmitting.value = true
+  isSuccess.value = false
+
+  try {
+    await acceptInvite({
+      token: token.value
+    })
+    isSuccess.value = true
+    await router.replace({ path: '/' })
+  } catch {
+    // 错误已在 store 中处理
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+async function onGoHome() {
+  await router.replace({ path: '/' })
+}
+</script>
+
 <template>
   <div class="mx-auto w-full max-w-md px-4 pt-6 pb-24">
     <div class="card p-5">
@@ -84,56 +137,3 @@
     </div>
   </div>
 </template>
-
-<script setup>
-import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { useUserStore, acceptInvite } from '@/stores'
-
-const route = useRoute()
-const router = useRouter()
-const { t } = useI18n()
-const userStore = useUserStore()
-
-const token = computed(() => String(route.params.token || '').trim())
-const tokenPreview = computed(() => {
-  if (!token.value) return t('views.invite.tokenPreviewEmpty')
-  const head = token.value.slice(0, 6)
-  const tail = token.value.slice(-4)
-  return `${head}…${tail}`
-})
-
-const isSubmitting = ref(false)
-const isSuccess = ref(false)
-
-const errorMessage = computed(() => userStore.error || '')
-
-const isAcceptDisabled = computed(() => {
-  const tokenOk = !!token.value
-  return isSubmitting.value || isSuccess.value || !tokenOk
-})
-
-async function onAccept() {
-  if (isAcceptDisabled.value) return
-
-  isSubmitting.value = true
-  isSuccess.value = false
-
-  try {
-    await acceptInvite({
-      token: token.value
-    })
-    isSuccess.value = true
-    await router.replace({ path: '/' })
-  } catch {
-    // 错误已在 store 中处理
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-async function onGoHome() {
-  await router.replace({ path: '/' })
-}
-</script>

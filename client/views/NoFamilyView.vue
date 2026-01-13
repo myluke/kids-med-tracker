@@ -1,3 +1,50 @@
+<script setup>
+import { computed, ref, watchEffect } from 'vue'
+import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { useUserStore, useFamilyStore, createFamily } from '@/stores'
+
+const router = useRouter()
+const { t } = useI18n()
+const userStore = useUserStore()
+const familyStore = useFamilyStore()
+
+const familyName = ref('')
+const isSubmitting = ref(false)
+
+const hasFamilies = computed(() => (familyStore.families?.length || 0) > 0)
+const errorMessage = computed(() => userStore.error || '')
+
+const isSubmitDisabled = computed(() => {
+  const nameOk = familyName.value.trim().length > 0
+  return isSubmitting.value || !nameOk
+})
+
+watchEffect(() => {
+  if (hasFamilies.value) router.replace({ path: '/' })
+})
+
+async function onCreateFamily() {
+  if (isSubmitDisabled.value) return
+
+  isSubmitting.value = true
+  try {
+    await createFamily({
+      name: familyName.value.trim()
+    })
+    await router.replace({ path: '/' })
+  } catch {
+    // 错误已在 store 中处理
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+async function onGoHome() {
+  await router.replace({ path: '/' })
+}
+</script>
+
 <template>
   <div class="mx-auto w-full max-w-md px-4 pt-6 pb-24">
     <div class="card p-5">
@@ -102,50 +149,3 @@
     </div>
   </div>
 </template>
-
-<script setup>
-import { computed, ref, watchEffect } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { useUserStore, useFamilyStore, createFamily } from '@/stores'
-
-const router = useRouter()
-const { t } = useI18n()
-const userStore = useUserStore()
-const familyStore = useFamilyStore()
-
-const familyName = ref('')
-const isSubmitting = ref(false)
-
-const hasFamilies = computed(() => (familyStore.families?.length || 0) > 0)
-const errorMessage = computed(() => userStore.error || '')
-
-const isSubmitDisabled = computed(() => {
-  const nameOk = familyName.value.trim().length > 0
-  return isSubmitting.value || !nameOk
-})
-
-watchEffect(() => {
-  if (hasFamilies.value) router.replace({ path: '/' })
-})
-
-async function onCreateFamily() {
-  if (isSubmitDisabled.value) return
-
-  isSubmitting.value = true
-  try {
-    await createFamily({
-      name: familyName.value.trim()
-    })
-    await router.replace({ path: '/' })
-  } catch {
-    // 错误已在 store 中处理
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-async function onGoHome() {
-  await router.replace({ path: '/' })
-}
-</script>

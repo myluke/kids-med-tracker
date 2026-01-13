@@ -1,18 +1,15 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { storeToRefs } from 'pinia'
 import { useChildrenStore } from '@/stores'
 
 const childrenStore = useChildrenStore()
+const { currentChildColor } = storeToRefs(childrenStore)
 const emit = defineEmits(['close', 'submit'])
 const { t } = useI18n()
 
 const note = ref('')
-
-const currentChildColor = computed(() => {
-  const child = childrenStore.children.find(c => c.id === childrenStore.currentChild)
-  return child?.color || '#8B9DD9'
-})
 
 const submit = () => {
   if (!note.value.trim()) {

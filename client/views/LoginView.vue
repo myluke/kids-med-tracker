@@ -1,3 +1,160 @@
+<script setup>
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { supabase } from '@/lib/supabase'
+import { useUserStore, bootstrap } from '@/stores'
+
+const router = useRouter()
+const route = useRoute()
+const { t } = useI18n()
+const userStore = useUserStore()
+
+// 步骤: 'email' | 'code'
+const step = ref('email')
+const email = ref('')
+const code = ref('')
+const isSubmitting = ref(false)
+const errorMessage = ref('')
+
+// 重发倒计时
+const resendCountdown = ref(0)
+let resendTimer = null
+
+// 计算属性
+const canSubmit = computed(() => {
+  return !isSubmitting.value && email.value.trim().length > 0 && email.value.includes('@')
+})
+
+const canResend = computed(() => {
+  return resendCountdown.value === 0 && !isSubmitting.value
+})
+
+const canVerify = computed(() => {
+  return !isSubmitting.value && code.value.trim().length === 6
+})
+
+// 处理 URL 错误参数
+watch(() => route.query.error, (error) => {
+  if (error) {
+    const errorMessages = {
+      invalid_token: t('views.login.errors.invalidToken'),
+      expired_token: t('views.login.errors.expiredToken'),
+      auth_failed: t('views.login.errors.authFailed')
+    }
+    errorMessage.value = errorMessages[error] || t('views.login.errors.unknown')
+    // 清除 URL 参数
+    router.replace({ query: {} })
+  }
+}, { immediate: true })
+
+// 如果已登录，跳转到首页
+watch(() => userStore.user, (user) => {
+  if (user) {
+    const redirect = route.query.redirect || '/'
+    router.replace({ path: redirect })
+  }
+}, { immediate: true })
+
+// 开始重发倒计时
+function startResendTimer() {
+  resendCountdown.value = 60
+  resendTimer = setInterval(() => {
+    resendCountdown.value--
+    if (resendCountdown.value <= 0) {
+      clearInterval(resendTimer)
+      resendTimer = null
+    }
+  }, 1000)
+}
+
+// 发送验证码
+async function onSendCode() {
+  if (!canSubmit.value && step.value === 'email') return
+  if (!canResend.value && step.value === 'code') return
+
+  isSubmitting.value = true
+  errorMessage.value = ''
+
+  try {
+    // 不设置 emailRedirectTo，Supabase 将发送验证码而非链接
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.value.trim()
+    })
+
+    if (error) {
+      throw error
+    }
+
+    step.value = 'code'
+    startResendTimer()
+  } catch (err) {
+    errorMessage.value = err.message || t('views.login.errors.sendCodeFailed')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+// 验证验证码
+async function onVerifyCode() {
+  if (!canVerify.value) return
+
+  isSubmitting.value = true
+  errorMessage.value = ''
+
+  try {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: email.value.trim(),
+      token: code.value.trim(),
+      type: 'email'
+    })
+
+    if (error) {
+      throw error
+    }
+
+    if (data.session) {
+      await bootstrap()
+      const redirect = route.query.redirect || '/'
+      router.replace({ path: redirect })
+    }
+  } catch (err) {
+    errorMessage.value = err.message || t('views.login.errors.invalidCode')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+// 返回邮箱输入步骤
+function onBackToEmail() {
+  step.value = 'email'
+  code.value = ''
+  errorMessage.value = ''
+  if (resendTimer) {
+    clearInterval(resendTimer)
+    resendTimer = null
+  }
+  resendCountdown.value = 0
+}
+
+// 监听 auth 状态变化
+onMounted(() => {
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      await bootstrap()
+    }
+  })
+
+  // 保存 subscription 以便清理
+  onUnmounted(() => {
+    subscription.unsubscribe()
+    if (resendTimer) {
+      clearInterval(resendTimer)
+    }
+  })
+})
+</script>
+
 <template>
   <div class="mx-auto w-full max-w-md px-4 pt-6 pb-24">
     <!-- Logo 和标题 -->
@@ -155,160 +312,3 @@
     </div>
   </div>
 </template>
-
-<script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { supabase } from '@/lib/supabase'
-import { useUserStore, bootstrap } from '@/stores'
-
-const router = useRouter()
-const route = useRoute()
-const { t } = useI18n()
-const userStore = useUserStore()
-
-// 步骤: 'email' | 'code'
-const step = ref('email')
-const email = ref('')
-const code = ref('')
-const isSubmitting = ref(false)
-const errorMessage = ref('')
-
-// 重发倒计时
-const resendCountdown = ref(0)
-let resendTimer = null
-
-// 计算属性
-const canSubmit = computed(() => {
-  return !isSubmitting.value && email.value.trim().length > 0 && email.value.includes('@')
-})
-
-const canResend = computed(() => {
-  return resendCountdown.value === 0 && !isSubmitting.value
-})
-
-const canVerify = computed(() => {
-  return !isSubmitting.value && code.value.trim().length === 6
-})
-
-// 处理 URL 错误参数
-watch(() => route.query.error, (error) => {
-  if (error) {
-    const errorMessages = {
-      invalid_token: t('views.login.errors.invalidToken'),
-      expired_token: t('views.login.errors.expiredToken'),
-      auth_failed: t('views.login.errors.authFailed')
-    }
-    errorMessage.value = errorMessages[error] || t('views.login.errors.unknown')
-    // 清除 URL 参数
-    router.replace({ query: {} })
-  }
-}, { immediate: true })
-
-// 如果已登录，跳转到首页
-watch(() => userStore.user, (user) => {
-  if (user) {
-    const redirect = route.query.redirect || '/'
-    router.replace({ path: redirect })
-  }
-}, { immediate: true })
-
-// 开始重发倒计时
-function startResendTimer() {
-  resendCountdown.value = 60
-  resendTimer = setInterval(() => {
-    resendCountdown.value--
-    if (resendCountdown.value <= 0) {
-      clearInterval(resendTimer)
-      resendTimer = null
-    }
-  }, 1000)
-}
-
-// 发送验证码
-async function onSendCode() {
-  if (!canSubmit.value && step.value === 'email') return
-  if (!canResend.value && step.value === 'code') return
-
-  isSubmitting.value = true
-  errorMessage.value = ''
-
-  try {
-    // 不设置 emailRedirectTo，Supabase 将发送验证码而非链接
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.value.trim()
-    })
-
-    if (error) {
-      throw error
-    }
-
-    step.value = 'code'
-    startResendTimer()
-  } catch (err) {
-    errorMessage.value = err.message || t('views.login.errors.sendCodeFailed')
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-// 验证验证码
-async function onVerifyCode() {
-  if (!canVerify.value) return
-
-  isSubmitting.value = true
-  errorMessage.value = ''
-
-  try {
-    const { data, error } = await supabase.auth.verifyOtp({
-      email: email.value.trim(),
-      token: code.value.trim(),
-      type: 'email'
-    })
-
-    if (error) {
-      throw error
-    }
-
-    if (data.session) {
-      await bootstrap()
-      const redirect = route.query.redirect || '/'
-      router.replace({ path: redirect })
-    }
-  } catch (err) {
-    errorMessage.value = err.message || t('views.login.errors.invalidCode')
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-// 返回邮箱输入步骤
-function onBackToEmail() {
-  step.value = 'email'
-  code.value = ''
-  errorMessage.value = ''
-  if (resendTimer) {
-    clearInterval(resendTimer)
-    resendTimer = null
-  }
-  resendCountdown.value = 0
-}
-
-// 监听 auth 状态变化
-onMounted(() => {
-  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session) {
-      await bootstrap()
-    }
-  })
-
-  // 保存 subscription 以便清理
-  onUnmounted(() => {
-    subscription.unsubscribe()
-    if (resendTimer) {
-      clearInterval(resendTimer)
-    }
-  })
-})
-</script>

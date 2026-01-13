@@ -1,20 +1,17 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { storeToRefs } from 'pinia'
 import { useChildrenStore } from '@/stores'
 
 const childrenStore = useChildrenStore()
+const { currentChildColor, currentChildLightColor } = storeToRefs(childrenStore)
 const emit = defineEmits(['close', 'submit'])
 const { t } = useI18n()
 
 const tempValue = ref('')
 
 const quickTemps = [36.5, 37.0, 37.5, 38.0, 38.5, 39.0, 39.5, 40.0]
-
-const currentChildColor = computed(() => {
-  const child = childrenStore.children.find(c => c.id === childrenStore.currentChild)
-  return child?.color || '#8B9DD9'
-})
 
 const setQuickTemp = (value) => {
   tempValue.value = value
@@ -38,7 +35,7 @@ const submit = () => {
         class="text-2xl text-gray-400 p-1"
         @click="emit('close')"
       >
-        ×
+        &times;
       </button>
     </div>
 
@@ -54,7 +51,7 @@ const submit = () => {
         }"
         :style="tempValue == tempOption ? {
           borderColor: currentChildColor,
-          backgroundColor: childrenStore.children.find(c => c.id === childrenStore.currentChild)?.lightColor
+          backgroundColor: currentChildLightColor
         } : {}"
         @click="setQuickTemp(tempOption)"
       >

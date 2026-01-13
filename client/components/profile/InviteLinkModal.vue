@@ -83,7 +83,7 @@ const handleClose = () => {
         @click.self="handleClose"
       >
         <div class="absolute inset-0 bg-black/50" />
-        <div class="relative bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl">
+        <div class="modal-content relative bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl">
           <!-- Header -->
           <div class="flex items-center justify-between mb-5">
             <h3 class="text-lg font-semibold text-gray-800">
@@ -162,25 +162,3 @@ const handleClose = () => {
     </Transition>
   </Teleport>
 </template>
-
-<style scoped>
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-
-.modal-enter-active .relative,
-.modal-leave-active .relative {
-  transition: transform 0.2s ease;
-}
-
-.modal-enter-from .relative,
-.modal-leave-to .relative {
-  transform: scale(0.95);
-}
-</style>

@@ -13,6 +13,7 @@ import {
   Legend,
   Filler
 } from 'chart.js'
+import { storeToRefs } from 'pinia'
 import { useChildrenStore, useRecordsStore } from '@/stores'
 
 ChartJS.register(
@@ -27,13 +28,9 @@ ChartJS.register(
 )
 
 const childrenStore = useChildrenStore()
+const { currentChildColor: currentColor } = storeToRefs(childrenStore)
 const recordsStore = useRecordsStore()
 const { t, locale } = useI18n()
-
-const currentColor = computed(() => {
-  const child = childrenStore.children.find(c => c.id === childrenStore.currentChild)
-  return child?.color || '#8B9DD9'
-})
 
 const tempData = computed(() => recordsStore.getTempData(24))
 

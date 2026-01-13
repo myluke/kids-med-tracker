@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, provide } from 'vue'
+import { ref, computed, provide, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useRecordsStore, useChildrenStore } from './stores'
@@ -26,7 +26,7 @@ const toast = (message) => {
 // 提供给子组件使用
 provide('toast', toast)
 
-// 当前时间
+// 当前时间（每分钟更新一次）
 const currentTime = ref('')
 const updateTime = () => {
   currentTime.value = new Date().toLocaleTimeString(locale.value, {
@@ -35,7 +35,8 @@ const updateTime = () => {
   })
 }
 updateTime()
-setInterval(updateTime, 1000)
+const timeInterval = setInterval(updateTime, 60000)
+onUnmounted(() => clearInterval(timeInterval))
 
 // 导出数据
 const exportData = () => {

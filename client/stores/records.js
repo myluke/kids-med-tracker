@@ -46,22 +46,30 @@ export const useRecordsStore = defineStore('records', () => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    const todayRecords = currentRecords.value.filter(
-      r => new Date(r.time) >= today
-    )
+    // 单次遍历统计今日记录
+    const counts = { med: 0, cough: 0 }
+    for (const r of currentRecords.value) {
+      if (new Date(r.time) >= today) {
+        if (r.type === 'med') counts.med++
+        else if (r.type === 'cough') counts.cough++
+      }
+    }
 
-    const medCount = todayRecords.filter(r => r.type === 'med').length
-    const coughCount = todayRecords.filter(r => r.type === 'cough').length
+    // 查找最新体温
+    let lastTemp = null
+    let latestTime = 0
+    for (const r of currentRecords.value) {
+      const hasTemp = r.type === 'temp' || (r.type === 'med' && r.temp)
+      if (hasTemp) {
+        const time = new Date(r.time).getTime()
+        if (time > latestTime) {
+          latestTime = time
+          lastTemp = r.type === 'temp' ? r.value : r.temp
+        }
+      }
+    }
 
-    const tempRecords = currentRecords.value
-      .filter(r => r.type === 'temp' || (r.type === 'med' && r.temp))
-      .sort((a, b) => new Date(b.time) - new Date(a.time))
-
-    const lastTemp = tempRecords.length > 0
-      ? (tempRecords[0].temp || tempRecords[0].value)
-      : null
-
-    return { medCount, coughCount, lastTemp }
+    return { medCount: counts.med, coughCount: counts.cough, lastTemp }
   })
 
   /**

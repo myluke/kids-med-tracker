@@ -55,7 +55,7 @@ export async function bootstrap() {
 
     // 4. 设置默认孩子
     if (!childrenStore.currentChild && childrenStore.children.length > 0) {
-      childrenStore.setCurrentChild(childrenStore.children[0].id)
+      childrenStore.switchChild(childrenStore.children[0].id)
     }
 
     // 5. 加载记录
@@ -89,7 +89,7 @@ export async function setFamily(familyId) {
   await childrenStore.loadChildren(familyId)
 
   if (childrenStore.children.length > 0) {
-    childrenStore.setCurrentChild(childrenStore.children[0].id)
+    childrenStore.switchChild(childrenStore.children[0].id)
     await recordsStore.loadRecords({
       familyId,
       childId: childrenStore.currentChild

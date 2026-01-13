@@ -1,20 +1,17 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { storeToRefs } from 'pinia'
 import { useChildrenStore, medications } from '@/stores'
 
 const childrenStore = useChildrenStore()
+const { currentChildColor, currentChildLightColor } = storeToRefs(childrenStore)
 const emit = defineEmits(['close', 'submit'])
 const { t } = useI18n()
 
 const selectedMed = ref(null)
 const dosage = ref('')
 const temp = ref('')
-
-const currentChildColor = computed(() => {
-  const child = childrenStore.children.find(c => c.id === childrenStore.currentChild)
-  return child?.color || '#8B9DD9'
-})
 
 const selectMed = (med) => {
   selectedMed.value = med.name
@@ -47,7 +44,7 @@ const submit = () => {
         class="text-2xl text-gray-400 p-1"
         @click="emit('close')"
       >
-        ×
+        &times;
       </button>
     </div>
 
@@ -62,7 +59,7 @@ const submit = () => {
           : 'border-gray-200 bg-white'"
         :style="selectedMed === med.name ? {
           borderColor: currentChildColor,
-          backgroundColor: childrenStore.children.find(c => c.id === childrenStore.currentChild)?.lightColor
+          backgroundColor: currentChildLightColor
         } : {}"
         @click="selectMed(med)"
       >

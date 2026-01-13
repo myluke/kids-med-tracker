@@ -1,11 +1,32 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import * as childService from '@/services/childService'
 import { lightenHex } from '@/utils/colors'
 
 export const useChildrenStore = defineStore('children', () => {
   const children = ref([])
   const currentChild = ref(null)
+
+  /**
+   * 当前选中孩子的对象
+   */
+  const currentChildObject = computed(() =>
+    children.value.find(c => c.id === currentChild.value)
+  )
+
+  /**
+   * 当前孩子的主题色
+   */
+  const currentChildColor = computed(() =>
+    currentChildObject.value?.color || '#8B9DD9'
+  )
+
+  /**
+   * 当前孩子的浅色主题色
+   */
+  const currentChildLightColor = computed(() =>
+    currentChildObject.value?.lightColor || '#F5F5FF'
+  )
 
   /**
    * 加载孩子列表
@@ -85,13 +106,6 @@ export const useChildrenStore = defineStore('children', () => {
   }
 
   /**
-   * 设置当前孩子（初始化用）
-   */
-  const setCurrentChild = (childId) => {
-    currentChild.value = childId
-  }
-
-  /**
    * 重置状态
    */
   const reset = () => {
@@ -102,13 +116,15 @@ export const useChildrenStore = defineStore('children', () => {
   return {
     children,
     currentChild,
+    currentChildObject,
+    currentChildColor,
+    currentChildLightColor,
 
     loadChildren,
     createChild,
     updateChild,
     deleteChild,
     switchChild,
-    setCurrentChild,
     reset
   }
 })

@@ -149,7 +149,7 @@ const deleteRecord = (recordId) => {
           class="ml-2 px-2 py-1 text-gray-300 hover:text-erbao transition-colors"
           @click="deleteRecord(record.id)"
         >
-          ×
+          &times;
         </button>
       </div>
     </div>

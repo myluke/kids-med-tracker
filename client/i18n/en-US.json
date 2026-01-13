@@ -86,7 +86,12 @@
     "cough": {
       "title": "🫁 Record cough",
       "noteLabel": "Note (optional)",
-      "notePlaceholder": "e.g. Worse before sleep"
+      "notePlaceholder": "e.g. Worse before sleep",
+      "level": {
+        "mild": "Mild",
+        "moderate": "Moderate",
+        "severe": "Severe"
+      }
     },
     "temp": {
       "title": "🌡️ Record temperature",

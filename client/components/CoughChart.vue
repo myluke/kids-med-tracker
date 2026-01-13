@@ -11,6 +11,7 @@ import {
   Tooltip, 
   Legend 
 } from 'chart.js'
+import { storeToRefs } from 'pinia'
 import { useChildrenStore, useRecordsStore } from '@/stores'
 
 ChartJS.register(
@@ -23,13 +24,9 @@ ChartJS.register(
 )
 
 const childrenStore = useChildrenStore()
+const { currentChildColor: currentColor } = storeToRefs(childrenStore)
 const recordsStore = useRecordsStore()
 const { t } = useI18n()
-
-const currentColor = computed(() => {
-  const child = childrenStore.children.find(c => c.id === childrenStore.currentChild)
-  return child?.color || '#8B9DD9'
-})
 
 const coughData = computed(() => recordsStore.getCoughData(3, t))
 
