@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useUserStore, useFamilyStore, useChildrenStore, useRecordsStore, createChild } from '@/stores'
 import ChildTabs from '@/components/ChildTabs.vue'
+import ChildEditModal from '@/components/profile/ChildEditModal.vue'
 import MedTimer from '@/components/MedTimer.vue'
 import QuickActions from '@/components/QuickActions.vue'
 import BottomSheet from '@/components/BottomSheet.vue'
@@ -24,6 +25,7 @@ const router = useRouter()
 
 const hasFamilies = computed(() => (familyStore.families?.length || 0) > 0)
 const promptedForChild = ref(false)
+const showAddChildModal = ref(false)
 
 watchEffect(() => {
   if (userStore.loading) return
@@ -40,18 +42,24 @@ watchEffect(() => {
   if (promptedForChild.value) return
 
   promptedForChild.value = true
-
-  const name = prompt(t('prompt.childName'))
-  if (!name || !name.trim()) return
-
-  createChild({
-    name: name.trim(),
-    emoji: '👶',
-    color: '#8B9DD9'
-  }).then(() => {
-    if (toast) toast(t('toast.childAdded', { name: name.trim() }))
-  }).catch(() => null)
+  showAddChildModal.value = true
 })
+
+const handleAddChildSave = async (data) => {
+  try {
+    await createChild({
+      name: data.name,
+      emoji: data.emoji,
+      color: data.color,
+      gender: data.gender,
+      age: data.age
+    })
+    showAddChildModal.value = false
+    if (toast) toast(t('toast.childAdded', { name: data.name }))
+  } catch {
+    // 错误由 store 处理
+  }
+}
 
 // 面板显示状态
 const showMedPanel = ref(false)
@@ -181,5 +189,13 @@ const submitTemp = (value) => {
         @submit="submitNote"
       />
     </BottomSheet>
+
+    <!-- 添加宝贝弹窗 -->
+    <ChildEditModal
+      :show="showAddChildModal"
+      :child="null"
+      @close="showAddChildModal = false"
+      @save="handleAddChildSave"
+    />
   </div>
 </template>

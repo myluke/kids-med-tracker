@@ -129,8 +129,11 @@ pnpm worker:dev
 
 1. 进入 **Authentication** → **Providers**
 2. 确认 **Email** 已启用（默认启用）
-3. 进入 **Authentication** → **Email Templates**
-4. （可选）自定义 OTP 验证码邮件模板
+3. **关闭 "Confirm email"** 选项（重要！）
+   - 默认情况下，新用户首次注册会收到"确认链接"邮件，而非 6 位验证码
+   - 关闭此选项后，新用户和老用户都会收到统一的 OTP 验证码，体验一致
+4. 进入 **Authentication** → **Email Templates**
+5. （可选）自定义 OTP 验证码邮件模板
 
 ### 第四步：获取 Supabase 密钥
 

@@ -132,6 +132,10 @@ CREATE POLICY "Authenticated users can create family" ON public.families
 CREATE POLICY "Family members can view family" ON public.families
   FOR SELECT USING (is_family_member(id));
 
+-- 创建者可以查看自己创建的家庭（解决创建时的循环依赖）
+CREATE POLICY "Creator can view own family" ON public.families
+  FOR SELECT USING (created_by_user_id = auth.uid());
+
 CREATE POLICY "Owner can update family" ON public.families
   FOR UPDATE USING (is_family_owner(id));
 
