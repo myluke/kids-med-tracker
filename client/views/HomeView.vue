@@ -14,6 +14,7 @@ import TempPanel from '@/components/TempPanel.vue'
 import NotePanel from '@/components/NotePanel.vue'
 import TodayStats from '@/components/TodayStats.vue'
 import HistoryList from '@/components/HistoryList.vue'
+import PullToRefresh from '@/components/PullToRefresh.vue'
 
 const userStore = useUserStore()
 const familyStore = useFamilyStore()
@@ -122,80 +123,96 @@ const submitTemp = (value) => {
   showTempPanel.value = false
   toast(t('toast.tempRecorded', { value }))
 }
+
+// 下拉刷新
+const onRefresh = async (done) => {
+  try {
+    if (familyStore.currentFamilyId && childrenStore.currentChild) {
+      await recordsStore.loadRecords({
+        familyId: familyStore.currentFamilyId,
+        childId: childrenStore.currentChild
+      })
+    }
+  } finally {
+    done()
+  }
+}
 </script>
 
 <template>
-  <div class="py-6 space-y-5">
-    <!-- 孩子切换 -->
-    <ChildTabs />
+  <PullToRefresh @refresh="onRefresh">
+    <div class="py-6 space-y-5">
+      <!-- 孩子切换 -->
+      <ChildTabs />
 
-    <!-- 退烧药状态 -->
-    <MedTimer />
+      <!-- 退烧药状态 -->
+      <MedTimer />
 
-    <!-- 快速操作 -->
-    <QuickActions
-      @open-med="openMedPanel"
-      @open-cough="openCoughPanel"
-      @open-temp="openTempPanel"
-      @quick-note="quickNote"
-    />
+      <!-- 快速操作 -->
+      <QuickActions
+        @open-med="openMedPanel"
+        @open-cough="openCoughPanel"
+        @open-temp="openTempPanel"
+        @quick-note="quickNote"
+      />
 
-    <!-- 今日统计 -->
-    <TodayStats />
+      <!-- 今日统计 -->
+      <TodayStats />
 
-    <!-- 历史记录 -->
-    <HistoryList />
+      <!-- 历史记录 -->
+      <HistoryList />
+    </div>
+  </PullToRefresh>
 
-    <!-- 用药弹层 -->
-    <BottomSheet
-      :show="showMedPanel"
+  <!-- 用药弹层 -->
+  <BottomSheet
+    :show="showMedPanel"
+    @close="showMedPanel = false"
+  >
+    <MedPanel
       @close="showMedPanel = false"
-    >
-      <MedPanel
-        @close="showMedPanel = false"
-        @submit="submitMed"
-      />
-    </BottomSheet>
-
-    <!-- 咳嗽弹层 -->
-    <BottomSheet
-      :show="showCoughPanel"
-      @close="showCoughPanel = false"
-    >
-      <CoughPanel
-        @close="showCoughPanel = false"
-        @submit="submitCough"
-      />
-    </BottomSheet>
-
-    <!-- 体温弹层 -->
-    <BottomSheet
-      :show="showTempPanel"
-      @close="showTempPanel = false"
-    >
-      <TempPanel
-        @close="showTempPanel = false"
-        @submit="submitTemp"
-      />
-    </BottomSheet>
-
-    <!-- 备注弹层 -->
-    <BottomSheet
-      :show="showNotePanel"
-      @close="showNotePanel = false"
-    >
-      <NotePanel
-        @close="showNotePanel = false"
-        @submit="submitNote"
-      />
-    </BottomSheet>
-
-    <!-- 添加宝贝弹窗 -->
-    <ChildEditModal
-      :show="showAddChildModal"
-      :child="null"
-      @close="showAddChildModal = false"
-      @save="handleAddChildSave"
+      @submit="submitMed"
     />
-  </div>
+  </BottomSheet>
+
+  <!-- 咳嗽弹层 -->
+  <BottomSheet
+    :show="showCoughPanel"
+    @close="showCoughPanel = false"
+  >
+    <CoughPanel
+      @close="showCoughPanel = false"
+      @submit="submitCough"
+    />
+  </BottomSheet>
+
+  <!-- 体温弹层 -->
+  <BottomSheet
+    :show="showTempPanel"
+    @close="showTempPanel = false"
+  >
+    <TempPanel
+      @close="showTempPanel = false"
+      @submit="submitTemp"
+    />
+  </BottomSheet>
+
+  <!-- 备注弹层 -->
+  <BottomSheet
+    :show="showNotePanel"
+    @close="showNotePanel = false"
+  >
+    <NotePanel
+      @close="showNotePanel = false"
+      @submit="submitNote"
+    />
+  </BottomSheet>
+
+  <!-- 添加宝贝弹窗 -->
+  <ChildEditModal
+    :show="showAddChildModal"
+    :child="null"
+    @close="showAddChildModal = false"
+    @save="handleAddChildSave"
+  />
 </template>

@@ -8,6 +8,11 @@
     "stats": "Stats",
     "profile": "Me"
   },
+  "pullToRefresh": {
+    "pull": "Pull to refresh",
+    "release": "Release to refresh",
+    "refreshing": "Refreshing..."
+  },
   "common": {
     "confirm": "Confirm",
     "cancel": "Cancel",

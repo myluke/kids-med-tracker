@@ -8,6 +8,11 @@
     "stats": "统计",
     "profile": "我的"
   },
+  "pullToRefresh": {
+    "pull": "下拉刷新",
+    "release": "松开刷新",
+    "refreshing": "刷新中..."
+  },
   "common": {
     "confirm": "确认",
     "cancel": "取消",
