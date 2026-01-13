@@ -12,7 +12,7 @@ const CHUNK_RECOVERY_WINDOW_MS = 30_000
 
 function isChunkLoadError(error) {
   const message = error instanceof Error ? error.message : String(error || '')
-  return /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk|ChunkLoadError/i.test(message)
+  return /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed|Loading chunk|ChunkLoadError/i.test(message)
 }
 
 function readChunkRecoveryState() {

@@ -53,18 +53,19 @@ export async function createFamily(
     throw ServiceError.validationError('Invalid input', parsed.error.flatten())
   }
 
-  // 检查家庭数量限制
-  const { count, error: countError } = await ctx.db
+  // 检查家庭数量限制（避免依赖 count/head，在部分环境下可能不稳定）
+  const { data: existing, error: listError } = await ctx.db
     .from('families')
-    .select('*', { count: 'exact', head: true })
+    .select('id')
     .eq('created_by_user_id', ctx.user.id)
+    .limit(MAX_FAMILIES_PER_USER)
 
-  if (countError) {
-    console.error('Failed to count families:', countError)
+  if (listError) {
+    console.error('Failed to list families:', listError)
     throw ServiceError.dbError('Failed to check family limit')
   }
 
-  if ((count || 0) >= MAX_FAMILIES_PER_USER) {
+  if ((existing?.length || 0) >= MAX_FAMILIES_PER_USER) {
     throw new ServiceError(403, ErrorCode.FAMILY_LIMIT, 'Family creation limit reached')
   }
 
