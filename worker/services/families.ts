@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { ServiceContext } from './types'
 import { ServiceError, ErrorCode } from '../errors/service-error'
-import { getUserFamilies, type FamilyRole } from '../lib/supabase'
+import { getUserFamilies, checkFamilyMembership, type FamilyRole } from '../lib/supabase'
 
 // ============ Zod Schemas ============
 
@@ -97,4 +97,39 @@ export async function createFamily(
     name: family.name,
     createdAt: family.created_at,
   }
+}
+
+/**
+ * 删除家庭
+ * @throws ServiceError 403 非所有者
+ * @throws ServiceError 404 不是家庭成员
+ * @throws ServiceError 500 数据库错误
+ */
+export async function deleteFamily(
+  ctx: ServiceContext,
+  familyId: string
+): Promise<{ deleted: boolean }> {
+  // 检查用户是否是家庭所有者
+  const role = await checkFamilyMembership(ctx.db, familyId, ctx.user.id)
+
+  if (!role) {
+    throw new ServiceError(404, ErrorCode.NOT_FAMILY_MEMBER, 'Not a family member')
+  }
+
+  if (role !== 'owner') {
+    throw new ServiceError(403, ErrorCode.NOT_FAMILY_OWNER, 'Only the owner can delete the family')
+  }
+
+  // 删除家庭（数据库 CASCADE 自动删除关联数据）
+  const { error: deleteError } = await ctx.db
+    .from('families')
+    .delete()
+    .eq('id', familyId)
+
+  if (deleteError) {
+    console.error('Failed to delete family:', deleteError)
+    throw ServiceError.dbError('Failed to delete family')
+  }
+
+  return { deleted: true }
 }

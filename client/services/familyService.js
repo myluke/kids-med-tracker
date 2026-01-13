@@ -12,3 +12,15 @@ export async function createFamily({ name }) {
     json: { name }
   })
 }
+
+/**
+ * 删除家庭
+ * @param {Object} params
+ * @param {string} params.familyId - 家庭 ID
+ * @returns {Promise<Object>}
+ */
+export async function deleteFamily({ familyId }) {
+  return apiFetch(`/api/families/${familyId}`, {
+    method: 'DELETE'
+  })
+}

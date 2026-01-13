@@ -29,7 +29,9 @@
     "childAdded": "✓ 已添加宝贝 {name}",
     "childUpdated": "✓ 已更新宝贝信息",
     "childDeleted": "✓ 已删除宝贝",
-    "inviteCopied": "✓ 邀请链接已复制"
+    "inviteCopied": "✓ 邀请链接已复制",
+    "familyCreated": "✓ 已创建家庭",
+    "familyDeleted": "✓ 已删除家庭"
   },
   "confirm": {
     "deleteRecord": "确定删除这条记录吗？"
@@ -249,7 +251,17 @@
         "copyLink": "复制链接",
         "copied": "已复制",
         "generating": "生成中…",
-        "noOtherFamilies": "暂无其他家庭"
+        "noOtherFamilies": "暂无其他家庭",
+        "createFamily": "创建新家庭",
+        "createFamilyTitle": "创建新家庭",
+        "createFamilyHint": "你将成为新家庭的所有者",
+        "deleteFamily": "删除当前家庭",
+        "deleteFamilyTitle": "删除家庭",
+        "deleteFamilyWarning": "确定要删除「{name}」吗？",
+        "deleteWarningChildren": "所有宝贝信息将被删除",
+        "deleteWarningRecords": "所有用药、体温记录将被删除",
+        "deleteWarningMembers": "所有家庭成员将被移除",
+        "deleteIrreversible": "此操作无法撤销"
       }
     }
   }

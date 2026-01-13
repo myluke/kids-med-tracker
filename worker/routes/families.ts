@@ -54,4 +54,15 @@ families.post('/', async c => {
   }
 })
 
+families.delete('/:familyId', async c => {
+  try {
+    const ctx = buildServiceContext(c)
+    const familyId = c.req.param('familyId')
+    const data = await familiesService.deleteFamily(ctx, familyId)
+    return ok(c, data)
+  } catch (error) {
+    return handleError(c, error)
+  }
+})
+
 export default families

@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 import * as familyService from '@/services/familyService'
 import * as inviteService from '@/services/inviteService'
 
+
+
 export const useFamilyStore = defineStore('family', () => {
   const families = ref([])
   const currentFamilyId = ref(null)
@@ -70,6 +72,18 @@ export const useFamilyStore = defineStore('family', () => {
   }
 
   /**
+   * 删除家庭
+   */
+  const deleteFamily = async ({ familyId }) => {
+    const result = await familyService.deleteFamily({ familyId })
+    families.value = families.value.filter(f => f.id !== familyId)
+    if (currentFamilyId.value === familyId) {
+      currentFamilyId.value = families.value.length > 0 ? families.value[0].id : null
+    }
+    return result
+  }
+
+  /**
    * 重置状态
    */
   const reset = () => {
@@ -90,6 +104,7 @@ export const useFamilyStore = defineStore('family', () => {
     createFamily,
     createInvite,
     acceptInvite,
+    deleteFamily,
     reset
   }
 })

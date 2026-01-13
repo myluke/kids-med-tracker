@@ -225,3 +225,23 @@ export async function deleteChild(childId) {
   // 清除该孩子的记录缓存
   recordsStore.clearChildRecords(deletedId)
 }
+
+/**
+ * 删除家庭并刷新状态
+ */
+export async function deleteFamily(familyId) {
+  const familyStore = useFamilyStore()
+  const childrenStore = useChildrenStore()
+  const recordsStore = useRecordsStore()
+
+  await familyStore.deleteFamily({ familyId })
+
+  // 如果还有家庭，切换到第一个
+  if (familyStore.families.length > 0) {
+    await setFamily(familyStore.families[0].id)
+  } else {
+    // 清空所有数据
+    childrenStore.reset()
+    recordsStore.reset()
+  }
+}

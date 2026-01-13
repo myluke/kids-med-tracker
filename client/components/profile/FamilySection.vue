@@ -1,15 +1,23 @@
 <script setup>
 import { ref, computed, inject } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useFamilyStore, setFamily } from '@/stores'
+import { useFamilyStore, setFamily, createFamily, deleteFamily } from '@/stores'
 import InviteLinkModal from './InviteLinkModal.vue'
+import CreateFamilyModal from './CreateFamilyModal.vue'
+import DeleteFamilyModal from './DeleteFamilyModal.vue'
 
+const router = useRouter()
 const familyStore = useFamilyStore()
 const { t } = useI18n()
 const toast = inject('toast')
 
 const showInviteModal = ref(false)
 const showFamilyPicker = ref(false)
+const showCreateModal = ref(false)
+const showDeleteModal = ref(false)
+const isCreating = ref(false)
+const isDeleting = ref(false)
 
 const roleText = computed(() => {
   return familyStore.isOwner
@@ -18,6 +26,8 @@ const roleText = computed(() => {
 })
 
 const hasMultipleFamilies = computed(() => familyStore.families.length > 1)
+
+const canCreateFamily = computed(() => familyStore.families.length < 3)
 
 const otherFamilies = computed(() =>
   familyStore.families.filter(f => f.id !== familyStore.currentFamilyId)
@@ -29,6 +39,38 @@ const switchFamilyHandler = async (familyId) => {
     showFamilyPicker.value = false
   } catch (e) {
     toast?.(e.message || t('common.error'))
+  }
+}
+
+const handleCreateFamily = async (name) => {
+  if (isCreating.value) return
+  isCreating.value = true
+  try {
+    await createFamily({ name })
+    showCreateModal.value = false
+    toast?.(t('toast.familyCreated'))
+  } catch (e) {
+    toast?.(e.message || t('common.error'))
+  } finally {
+    isCreating.value = false
+  }
+}
+
+const handleDeleteFamily = async () => {
+  if (isDeleting.value) return
+  isDeleting.value = true
+  try {
+    await deleteFamily(familyStore.currentFamilyId)
+    showDeleteModal.value = false
+    toast?.(t('toast.familyDeleted'))
+
+    if (familyStore.families.length === 0) {
+      router.replace({ name: 'no-family' })
+    }
+  } catch (e) {
+    toast?.(e.message || t('common.error'))
+  } finally {
+    isDeleting.value = false
   }
 }
 </script>
@@ -120,10 +162,41 @@ const switchFamilyHandler = async (familyId) => {
       </div>
     </div>
 
-    <!-- Invite modal -->
+    <!-- Create family button -->
+    <button
+      v-if="canCreateFamily"
+      class="w-full py-3 rounded-xl border border-dashed border-gray-300 text-gray-600 font-medium hover:border-dabo hover:text-dabo transition-colors mt-3"
+      @click="showCreateModal = true"
+    >
+      + {{ t('views.profile.familySection.createFamily') }}
+    </button>
+
+    <!-- Delete family button (only for owner) -->
+    <button
+      v-if="familyStore.isOwner"
+      class="w-full py-3 rounded-xl text-red-500 font-medium hover:bg-red-50 transition-colors text-sm mt-2"
+      @click="showDeleteModal = true"
+    >
+      {{ t('views.profile.familySection.deleteFamily') }}
+    </button>
+
+    <!-- Modals -->
     <InviteLinkModal
       :show="showInviteModal"
       @close="showInviteModal = false"
+    />
+    <CreateFamilyModal
+      :show="showCreateModal"
+      :loading="isCreating"
+      @close="showCreateModal = false"
+      @create="handleCreateFamily"
+    />
+    <DeleteFamilyModal
+      :show="showDeleteModal"
+      :loading="isDeleting"
+      :family-name="familyStore.currentFamilyName"
+      @close="showDeleteModal = false"
+      @confirm="handleDeleteFamily"
     />
   </div>
 </template>

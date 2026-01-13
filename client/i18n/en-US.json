@@ -29,7 +29,9 @@
     "childAdded": "✓ Added child {name}",
     "childUpdated": "✓ Child info updated",
     "childDeleted": "✓ Child deleted",
-    "inviteCopied": "✓ Invite link copied"
+    "inviteCopied": "✓ Invite link copied",
+    "familyCreated": "✓ Family created",
+    "familyDeleted": "✓ Family deleted"
   },
   "confirm": {
     "deleteRecord": "Delete this record?"
@@ -249,7 +251,17 @@
         "copyLink": "Copy Link",
         "copied": "Copied",
         "generating": "Generating…",
-        "noOtherFamilies": "No other families"
+        "noOtherFamilies": "No other families",
+        "createFamily": "Create New Family",
+        "createFamilyTitle": "Create New Family",
+        "createFamilyHint": "You will become the owner of this family",
+        "deleteFamily": "Delete Current Family",
+        "deleteFamilyTitle": "Delete Family",
+        "deleteFamilyWarning": "Are you sure you want to delete \"{name}\"?",
+        "deleteWarningChildren": "All children will be deleted",
+        "deleteWarningRecords": "All medication and temperature records will be deleted",
+        "deleteWarningMembers": "All family members will be removed",
+        "deleteIrreversible": "This action cannot be undone"
       }
     }
   }
