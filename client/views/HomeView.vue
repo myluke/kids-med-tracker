@@ -140,79 +140,81 @@ const onRefresh = async (done) => {
 </script>
 
 <template>
-  <PullToRefresh @refresh="onRefresh">
-    <div class="py-6 space-y-5">
-      <!-- 孩子切换 -->
-      <ChildTabs />
+  <div>
+    <PullToRefresh @refresh="onRefresh">
+      <div class="py-6 space-y-5">
+        <!-- 孩子切换 -->
+        <ChildTabs />
 
-      <!-- 退烧药状态 -->
-      <MedTimer />
+        <!-- 退烧药状态 -->
+        <MedTimer />
 
-      <!-- 快速操作 -->
-      <QuickActions
-        @open-med="openMedPanel"
-        @open-cough="openCoughPanel"
-        @open-temp="openTempPanel"
-        @quick-note="quickNote"
-      />
+        <!-- 快速操作 -->
+        <QuickActions
+          @open-med="openMedPanel"
+          @open-cough="openCoughPanel"
+          @open-temp="openTempPanel"
+          @quick-note="quickNote"
+        />
 
-      <!-- 今日统计 -->
-      <TodayStats />
+        <!-- 今日统计 -->
+        <TodayStats />
 
-      <!-- 历史记录 -->
-      <HistoryList />
-    </div>
-  </PullToRefresh>
+        <!-- 历史记录 -->
+        <HistoryList />
+      </div>
+    </PullToRefresh>
 
-  <!-- 用药弹层 -->
-  <BottomSheet
-    :show="showMedPanel"
-    @close="showMedPanel = false"
-  >
-    <MedPanel
+    <!-- 用药弹层 -->
+    <BottomSheet
+      :show="showMedPanel"
       @close="showMedPanel = false"
-      @submit="submitMed"
-    />
-  </BottomSheet>
+    >
+      <MedPanel
+        @close="showMedPanel = false"
+        @submit="submitMed"
+      />
+    </BottomSheet>
 
-  <!-- 咳嗽弹层 -->
-  <BottomSheet
-    :show="showCoughPanel"
-    @close="showCoughPanel = false"
-  >
-    <CoughPanel
+    <!-- 咳嗽弹层 -->
+    <BottomSheet
+      :show="showCoughPanel"
       @close="showCoughPanel = false"
-      @submit="submitCough"
-    />
-  </BottomSheet>
+    >
+      <CoughPanel
+        @close="showCoughPanel = false"
+        @submit="submitCough"
+      />
+    </BottomSheet>
 
-  <!-- 体温弹层 -->
-  <BottomSheet
-    :show="showTempPanel"
-    @close="showTempPanel = false"
-  >
-    <TempPanel
+    <!-- 体温弹层 -->
+    <BottomSheet
+      :show="showTempPanel"
       @close="showTempPanel = false"
-      @submit="submitTemp"
-    />
-  </BottomSheet>
+    >
+      <TempPanel
+        @close="showTempPanel = false"
+        @submit="submitTemp"
+      />
+    </BottomSheet>
 
-  <!-- 备注弹层 -->
-  <BottomSheet
-    :show="showNotePanel"
-    @close="showNotePanel = false"
-  >
-    <NotePanel
+    <!-- 备注弹层 -->
+    <BottomSheet
+      :show="showNotePanel"
       @close="showNotePanel = false"
-      @submit="submitNote"
-    />
-  </BottomSheet>
+    >
+      <NotePanel
+        @close="showNotePanel = false"
+        @submit="submitNote"
+      />
+    </BottomSheet>
 
-  <!-- 添加宝贝弹窗 -->
-  <ChildEditModal
-    :show="showAddChildModal"
-    :child="null"
-    @close="showAddChildModal = false"
-    @save="handleAddChildSave"
-  />
+    <!-- 添加宝贝弹窗 -->
+    <ChildEditModal
+      :show="showAddChildModal"
+      :child="null"
+      @close="showAddChildModal = false"
+      @save="handleAddChildSave"
+    />
+  </div>
 </template>

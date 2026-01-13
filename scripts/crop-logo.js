@@ -24,7 +24,7 @@ async function cropLogo() {
 
   const meta = await sharp(trimmed).metadata()
   const size = meta.width
-  console.log(`原始尺寸: 1024x1024`)
+  console.log('原始尺寸: 1024x1024')
   console.log(`裁剪后尺寸: ${size}x${size}`)
 
   // 圆角半径约为尺寸的 25%
