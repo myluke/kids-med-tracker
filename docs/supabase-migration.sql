@@ -172,10 +172,20 @@ CREATE POLICY "Family members can view members"
     )
   );
 
+-- 创建家庭后：仅允许创建者把自己加入为 owner（防止任意加入他人家庭）
 DROP POLICY IF EXISTS "Users can join family" ON public.family_members;
-CREATE POLICY "Users can join family"
+DROP POLICY IF EXISTS "Family creator can self-join as owner" ON public.family_members;
+CREATE POLICY "Family creator can self-join as owner"
   ON public.family_members FOR INSERT
-  WITH CHECK (user_id = auth.uid());
+  WITH CHECK (
+    user_id = auth.uid()
+    AND role = 'owner'
+    AND EXISTS (
+      SELECT 1 FROM public.families
+      WHERE families.id = family_members.family_id
+        AND families.created_by_user_id = auth.uid()
+    )
+  );
 
 DROP POLICY IF EXISTS "Owner can remove members" ON public.family_members;
 CREATE POLICY "Owner can remove members"
@@ -191,13 +201,15 @@ CREATE POLICY "Owner can remove members"
 
 -- ============ invites RLS ============
 DROP POLICY IF EXISTS "Family members can view invites" ON public.invites;
-CREATE POLICY "Family members can view invites"
+DROP POLICY IF EXISTS "Owner can view invites" ON public.invites;
+CREATE POLICY "Owner can view invites"
   ON public.invites FOR SELECT
   USING (
     EXISTS (
       SELECT 1 FROM public.family_members
       WHERE family_members.family_id = invites.family_id
         AND family_members.user_id = auth.uid()
+        AND family_members.role = 'owner'
     )
   );
 
@@ -213,16 +225,9 @@ CREATE POLICY "Owner can create invite"
     )
   );
 
+-- 邀请校验/接收建议走服务端（Worker）接口（避免将 invites 暴露给客户端）
 DROP POLICY IF EXISTS "Anyone can view invite by token" ON public.invites;
-CREATE POLICY "Anyone can view invite by token"
-  ON public.invites FOR SELECT
-  USING (true);
-
 DROP POLICY IF EXISTS "Authenticated users can accept invite" ON public.invites;
-CREATE POLICY "Authenticated users can accept invite"
-  ON public.invites FOR UPDATE
-  USING (used_at IS NULL AND expires_at > NOW())
-  WITH CHECK (used_by_user_id = auth.uid());
 
 -- ============ children RLS ============
 DROP POLICY IF EXISTS "Family members can view children" ON public.children;
@@ -237,13 +242,15 @@ CREATE POLICY "Family members can view children"
   );
 
 DROP POLICY IF EXISTS "Family members can add children" ON public.children;
-CREATE POLICY "Family members can add children"
+DROP POLICY IF EXISTS "Owner can add children" ON public.children;
+CREATE POLICY "Owner can add children"
   ON public.children FOR INSERT
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM public.family_members
       WHERE family_members.family_id = children.family_id
         AND family_members.user_id = auth.uid()
+        AND family_members.role = 'owner'
     )
   );
 

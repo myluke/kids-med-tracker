@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import type { AppEnv } from '../types'
 import { ok, fail } from '../utils/http'
-import { createServiceClient } from '../lib/supabase'
+import { createServiceClient, createUserClient } from '../lib/supabase'
 import { ServiceError } from '../errors/service-error'
 import * as invitesService from '../services/invites'
 import type { ServiceContext, OptionalUserContext } from '../services/types'
@@ -9,9 +9,25 @@ import type { ServiceContext, OptionalUserContext } from '../services/types'
 const invites = new Hono<AppEnv>()
 
 /**
- * 从 Hono Context 构建 ServiceContext（需要认证）
+ * 从 Hono Context 构建 ServiceContext（用户态，受 RLS 约束）
  */
-function buildServiceContext(c: { get: (key: string) => unknown; env: AppEnv['Bindings'] }): ServiceContext {
+function buildUserServiceContext(c: { get: (key: string) => unknown; env: AppEnv['Bindings'] }): ServiceContext {
+  const user = c.get('user') as ServiceContext['user'] | undefined
+  const accessToken = c.get('accessToken') as string | undefined
+  if (!user) throw ServiceError.unauthorized()
+  if (!accessToken) throw ServiceError.unauthorized()
+
+  return {
+    db: createUserClient(c.env, accessToken),
+    user,
+    env: c.env,
+  }
+}
+
+/**
+ * 从 Hono Context 构建 ServiceContext（服务端特权，用于邀请验签/接收）
+ */
+function buildAdminServiceContext(c: { get: (key: string) => unknown; env: AppEnv['Bindings'] }): ServiceContext {
   const user = c.get('user') as ServiceContext['user'] | undefined
   if (!user) throw ServiceError.unauthorized()
 
@@ -23,7 +39,7 @@ function buildServiceContext(c: { get: (key: string) => unknown; env: AppEnv['Bi
 }
 
 /**
- * 从 Hono Context 构建 OptionalUserContext（可选认证）
+ * 从 Hono Context 构建 OptionalUserContext（可选认证，服务端特权）
  */
 function buildOptionalUserContext(c: { get: (key: string) => unknown; env: AppEnv['Bindings'] }): OptionalUserContext {
   const user = c.get('user') as ServiceContext['user'] | undefined
@@ -48,7 +64,7 @@ function handleError(c: Parameters<typeof fail>[0], error: unknown) {
 
 invites.post('/', async c => {
   try {
-    const ctx = buildServiceContext(c)
+    const ctx = buildUserServiceContext(c)
     const json = await c.req.json().catch(() => ({}))
     const url = new URL(c.req.url)
     const data = await invitesService.createInvite(ctx, json, url.origin)
@@ -60,7 +76,7 @@ invites.post('/', async c => {
 
 invites.post('/accept', async c => {
   try {
-    const ctx = buildServiceContext(c)
+    const ctx = buildAdminServiceContext(c)
     const json = await c.req.json().catch(() => ({}))
     const data = await invitesService.acceptInvite(ctx, json)
     return ok(c, data)

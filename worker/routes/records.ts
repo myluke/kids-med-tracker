@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import type { AppEnv } from '../types'
 import { ok, fail } from '../utils/http'
-import { createServiceClient } from '../lib/supabase'
+import { createUserClient } from '../lib/supabase'
 import { ServiceError } from '../errors/service-error'
 import * as recordsService from '../services/records'
 import type { ServiceContext } from '../services/types'
@@ -13,10 +13,12 @@ const records = new Hono<AppEnv>()
  */
 function buildServiceContext(c: { get: (key: string) => unknown; env: AppEnv['Bindings'] }): ServiceContext {
   const user = c.get('user') as ServiceContext['user'] | undefined
+  const accessToken = c.get('accessToken') as string | undefined
   if (!user) throw ServiceError.unauthorized()
+  if (!accessToken) throw ServiceError.unauthorized()
 
   return {
-    db: createServiceClient(c.env),
+    db: createUserClient(c.env, accessToken),
     user,
     env: c.env,
   }

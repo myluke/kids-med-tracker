@@ -6,7 +6,7 @@ import type { Bindings, User } from '../types'
  * 包含服务方法所需的依赖
  */
 export interface ServiceContext {
-  /** Supabase 服务客户端（绕过 RLS） */
+  /** Supabase 客户端（通常使用用户 JWT，受 RLS 约束；少数场景使用 service role） */
   db: SupabaseClient
   /** 当前用户（已认证的场景） */
   user: User

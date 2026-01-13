@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { ServiceContext } from './types'
 import { ServiceError, ErrorCode } from '../errors/service-error'
-import { getUserFamilies, checkFamilyMembership, type FamilyRole } from '../lib/supabase'
+import { createServiceClient, getUserFamilies, checkFamilyMembership, type FamilyRole } from '../lib/supabase'
 
 // ============ Zod Schemas ============
 
@@ -68,12 +68,12 @@ export async function createFamily(
     throw new ServiceError(403, ErrorCode.FAMILY_LIMIT, 'Family creation limit reached')
   }
 
-  // 创建家庭
-  const { data: family, error: createError } = await ctx.db
+  const familyId = crypto.randomUUID()
+
+  // 创建家庭（用户态，受 RLS 约束；不依赖 RETURNING）
+  const { error: createError } = await ctx.db
     .from('families')
-    .insert({ name: parsed.data.name, created_by_user_id: ctx.user.id })
-    .select()
-    .single()
+    .insert({ id: familyId, name: parsed.data.name, created_by_user_id: ctx.user.id })
 
   if (createError) {
     console.error('Failed to create family:', createError)
@@ -83,19 +83,26 @@ export async function createFamily(
   // 将创建者加入家庭
   const { error: memberError } = await ctx.db
     .from('family_members')
-    .insert({ family_id: family.id, user_id: ctx.user.id, role: 'owner' })
+    .insert({ family_id: familyId, user_id: ctx.user.id, role: 'owner' })
 
   if (memberError) {
     console.error('Failed to add member:', memberError)
-    // 回滚
-    await ctx.db.from('families').delete().eq('id', family.id)
+    // 回滚（使用 service role 避免被 RLS 卡住）
+    const admin = createServiceClient(ctx.env)
+    await admin.from('families').delete().eq('id', familyId)
     throw ServiceError.dbError('Failed to create family')
   }
 
+  const { data: family } = await ctx.db
+    .from('families')
+    .select('id, name, created_at')
+    .eq('id', familyId)
+    .single()
+
   return {
-    id: family.id,
-    name: family.name,
-    createdAt: family.created_at,
+    id: familyId,
+    name: family?.name || parsed.data.name,
+    createdAt: family?.created_at || new Date().toISOString(),
   }
 }
 

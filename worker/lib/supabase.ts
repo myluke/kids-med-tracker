@@ -15,6 +15,37 @@ export function createServiceClient(env: Bindings): SupabaseClient {
 }
 
 /**
+ * 创建匿名 Supabase 客户端（使用 anon key）
+ * 注意：在 Worker 中不持久化 session，仅用于调用 Supabase API。
+ */
+export function createAnonClient(env: Bindings): SupabaseClient {
+  return createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
+}
+
+/**
+ * 创建用户态 Supabase 客户端（anon key + 用户 JWT）
+ * 该客户端受 RLS 约束，用于绝大多数业务读写。
+ */
+export function createUserClient(env: Bindings, accessToken: string): SupabaseClient {
+  return createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
+}
+
+/**
  * 家庭成员角色类型
  */
 export type FamilyRole = 'owner' | 'member'
@@ -58,4 +89,3 @@ export async function getUserFamilies(
     role: row.role as FamilyRole
   }))
 }
-

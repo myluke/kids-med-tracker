@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import type { AppEnv } from '../types'
 import { ok, fail } from '../utils/http'
-import { createServiceClient } from '../lib/supabase'
+import { createServiceClient, createUserClient } from '../lib/supabase'
 import { ServiceError } from '../errors/service-error'
 import * as familiesService from '../services/families'
 import type { ServiceContext } from '../services/types'
@@ -9,9 +9,25 @@ import type { ServiceContext } from '../services/types'
 const families = new Hono<AppEnv>()
 
 /**
- * 从 Hono Context 构建 ServiceContext
+ * 从 Hono Context 构建 ServiceContext（用户态，受 RLS 约束）
  */
-function buildServiceContext(c: { get: (key: string) => unknown; env: AppEnv['Bindings'] }): ServiceContext {
+function buildUserServiceContext(c: { get: (key: string) => unknown; env: AppEnv['Bindings'] }): ServiceContext {
+  const user = c.get('user') as ServiceContext['user'] | undefined
+  const accessToken = c.get('accessToken') as string | undefined
+  if (!user) throw ServiceError.unauthorized()
+  if (!accessToken) throw ServiceError.unauthorized()
+
+  return {
+    db: createUserClient(c.env, accessToken),
+    user,
+    env: c.env,
+  }
+}
+
+/**
+ * 从 Hono Context 构建 ServiceContext（服务端特权，仅用于需要跨表级联删除的操作）
+ */
+function buildAdminServiceContext(c: { get: (key: string) => unknown; env: AppEnv['Bindings'] }): ServiceContext {
   const user = c.get('user') as ServiceContext['user'] | undefined
   if (!user) throw ServiceError.unauthorized()
 
@@ -35,7 +51,7 @@ function handleError(c: Parameters<typeof fail>[0], error: unknown) {
 
 families.get('/', async c => {
   try {
-    const ctx = buildServiceContext(c)
+    const ctx = buildUserServiceContext(c)
     const data = await familiesService.listFamilies(ctx)
     return ok(c, data)
   } catch (error) {
@@ -45,7 +61,7 @@ families.get('/', async c => {
 
 families.post('/', async c => {
   try {
-    const ctx = buildServiceContext(c)
+    const ctx = buildUserServiceContext(c)
     const json = await c.req.json().catch(() => ({}))
     const data = await familiesService.createFamily(ctx, json)
     return ok(c, data, 201)
@@ -56,7 +72,7 @@ families.post('/', async c => {
 
 families.delete('/:familyId', async c => {
   try {
-    const ctx = buildServiceContext(c)
+    const ctx = buildAdminServiceContext(c)
     const familyId = c.req.param('familyId')
     const data = await familiesService.deleteFamily(ctx, familyId)
     return ok(c, data)

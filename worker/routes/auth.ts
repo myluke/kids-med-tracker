@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import type { AppEnv } from '../types'
 import { ok, fail } from '../utils/http'
-import { createServiceClient } from '../lib/supabase'
+import { createAnonClient, createUserClient } from '../lib/supabase'
 import { ServiceError } from '../errors/service-error'
 import { optionalUser } from '../middleware/auth'
 import * as authService from '../services/auth'
@@ -18,9 +18,10 @@ auth.use('/logout', optionalUser)
  */
 function buildOptionalUserContext(c: { get: (key: string) => unknown; env: AppEnv['Bindings'] }): OptionalUserContext {
   const user = c.get('user') as OptionalUserContext['user']
+  const accessToken = c.get('accessToken') as string | undefined
 
   return {
-    db: createServiceClient(c.env),
+    db: accessToken ? createUserClient(c.env, accessToken) : createAnonClient(c.env),
     user,
     env: c.env,
   }

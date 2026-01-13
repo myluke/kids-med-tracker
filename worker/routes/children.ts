@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import type { AppEnv } from '../types'
 import { ok, fail } from '../utils/http'
-import { createServiceClient } from '../lib/supabase'
+import { createServiceClient, createUserClient } from '../lib/supabase'
 import { ServiceError } from '../errors/service-error'
 import * as childrenService from '../services/children'
 import type { ServiceContext } from '../services/types'
@@ -9,9 +9,25 @@ import type { ServiceContext } from '../services/types'
 const children = new Hono<AppEnv>()
 
 /**
- * 从 Hono Context 构建 ServiceContext
+ * 从 Hono Context 构建 ServiceContext（用户态，受 RLS 约束）
  */
-function buildServiceContext(c: { get: (key: string) => unknown; env: AppEnv['Bindings'] }): ServiceContext {
+function buildUserServiceContext(c: { get: (key: string) => unknown; env: AppEnv['Bindings'] }): ServiceContext {
+  const user = c.get('user') as ServiceContext['user'] | undefined
+  const accessToken = c.get('accessToken') as string | undefined
+  if (!user) throw ServiceError.unauthorized()
+  if (!accessToken) throw ServiceError.unauthorized()
+
+  return {
+    db: createUserClient(c.env, accessToken),
+    user,
+    env: c.env,
+  }
+}
+
+/**
+ * 从 Hono Context 构建 ServiceContext（服务端特权，用于需要级联删除的操作）
+ */
+function buildAdminServiceContext(c: { get: (key: string) => unknown; env: AppEnv['Bindings'] }): ServiceContext {
   const user = c.get('user') as ServiceContext['user'] | undefined
   if (!user) throw ServiceError.unauthorized()
 
@@ -35,7 +51,7 @@ function handleError(c: Parameters<typeof fail>[0], error: unknown) {
 
 children.get('/', async c => {
   try {
-    const ctx = buildServiceContext(c)
+    const ctx = buildUserServiceContext(c)
     const input = {
       familyId: c.req.query('familyId') || '',
     }
@@ -49,7 +65,7 @@ children.get('/', async c => {
 
 children.post('/', async c => {
   try {
-    const ctx = buildServiceContext(c)
+    const ctx = buildUserServiceContext(c)
     const json = await c.req.json().catch(() => ({}))
     const data = await childrenService.createChild(ctx, json)
     return ok(c, data, 201)
@@ -60,7 +76,7 @@ children.post('/', async c => {
 
 children.patch('/:id', async c => {
   try {
-    const ctx = buildServiceContext(c)
+    const ctx = buildUserServiceContext(c)
     const json = await c.req.json().catch(() => ({}))
     const input = {
       childId: c.req.param('id'),
@@ -75,7 +91,7 @@ children.patch('/:id', async c => {
 
 children.delete('/:id', async c => {
   try {
-    const ctx = buildServiceContext(c)
+    const ctx = buildAdminServiceContext(c)
     const input = {
       childId: c.req.param('id'),
       familyId: c.req.query('familyId') || '',

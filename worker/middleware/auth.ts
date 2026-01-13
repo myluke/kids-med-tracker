@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from 'hono'
 import type { AppEnv, User } from '../types'
-import { createServiceClient } from '../lib/supabase'
+import { createAnonClient } from '../lib/supabase'
 
 function jsonError(status: number, code: string, message: string) {
   return new Response(
@@ -41,9 +41,9 @@ export const requireUser: MiddlewareHandler<AppEnv> = async (c, next) => {
   }
 
   try {
-    const supabase = createServiceClient(c.env)
+    const supabase = createAnonClient(c.env)
 
-    // 使用 service client 验证 JWT
+    // 验证 JWT 并获取用户信息
     const { data: { user }, error } = await supabase.auth.getUser(accessToken)
 
     if (error || !user) {
@@ -76,7 +76,7 @@ export const optionalUser: MiddlewareHandler<AppEnv> = async (c, next) => {
   }
 
   try {
-    const supabase = createServiceClient(c.env)
+    const supabase = createAnonClient(c.env)
     const { data: { user } } = await supabase.auth.getUser(accessToken)
 
     if (user) {
