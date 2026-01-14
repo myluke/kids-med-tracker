@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .pb-safe {
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+  }
+}
+
 /* 基础样式 */
 * {
   -webkit-tap-highlight-color: transparent;
@@ -10,7 +16,7 @@
 body {
   @apply bg-warm-50 text-gray-800 min-h-screen;
   font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
-  padding-bottom: 100px;
+  padding-bottom: 72px;
 }
 
 /* 自定义组件类 */

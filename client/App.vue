@@ -111,29 +111,29 @@ const pullTransformStyle = computed(() => ({
     </div>
 
     <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white flex justify-around py-3 pb-6 shadow-card-lg rounded-t-2xl z-50">
-      <button 
-        class="flex flex-col items-center gap-1 px-4 py-2 transition-colors"
+    <nav class="fixed bottom-0 left-0 right-0 bg-white flex justify-around pt-2 pb-safe shadow-card-lg rounded-t-xl z-50">
+      <button
+        class="flex flex-col items-center gap-1 px-4 py-1.5 transition-colors"
         :class="route.path === '/' ? 'text-dabo' : 'text-gray-400'"
         @click="router.push('/')"
       >
-        <span class="text-2xl">🏠</span>
+        <span class="text-xl">🏠</span>
         <span class="text-xs font-medium">{{ t('nav.home') }}</span>
       </button>
-      <button 
-        class="flex flex-col items-center gap-1 px-4 py-2 transition-colors"
+      <button
+        class="flex flex-col items-center gap-1 px-4 py-1.5 transition-colors"
         :class="route.path === '/stats' ? 'text-dabo' : 'text-gray-400'"
         @click="router.push('/stats')"
       >
-        <span class="text-2xl">📊</span>
+        <span class="text-xl">📊</span>
         <span class="text-xs font-medium">{{ t('nav.stats') }}</span>
       </button>
       <button
-        class="flex flex-col items-center gap-1 px-4 py-2 transition-colors"
+        class="flex flex-col items-center gap-1 px-4 py-1.5 transition-colors"
         :class="route.path === '/profile' ? 'text-dabo' : 'text-gray-400'"
         @click="router.push('/profile')"
       >
-        <span class="text-2xl">👤</span>
+        <span class="text-xl">👤</span>
         <span class="text-xs font-medium">{{ t('nav.profile') }}</span>
       </button>
     </nav>
