@@ -39,7 +39,10 @@ const submit = () => {
 
 <template>
   <div>
-    <PanelHeader :title="t('panels.med.title')" @close="emit('close')" />
+    <PanelHeader
+      :title="t('panels.med.title')"
+      @close="emit('close')"
+    />
 
     <!-- 药物选择 -->
     <div class="grid grid-cols-2 gap-2.5 mb-4">

@@ -30,7 +30,10 @@ const handleKeydown = (e) => {
 
 <template>
   <div>
-    <PanelHeader :title="t('panels.note.title')" @close="emit('close')" />
+    <PanelHeader
+      :title="t('panels.note.title')"
+      @close="emit('close')"
+    />
 
     <!-- 备注输入 -->
     <div class="mb-4">

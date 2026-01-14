@@ -25,7 +25,10 @@ const submit = (level) => {
 
 <template>
   <div>
-    <PanelHeader :title="t('panels.cough.title')" @close="emit('close')" />
+    <PanelHeader
+      :title="t('panels.cough.title')"
+      @close="emit('close')"
+    />
 
     <!-- 咳嗽程度选择 -->
     <div class="flex gap-2.5 mb-4">

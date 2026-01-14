@@ -30,7 +30,10 @@ const submit = () => {
 
 <template>
   <div>
-    <PanelHeader :title="t('panels.temp.title')" @close="emit('close')" />
+    <PanelHeader
+      :title="t('panels.temp.title')"
+      @close="emit('close')"
+    />
 
     <!-- 快捷温度按钮 -->
     <div class="flex flex-wrap gap-2 mb-4">

@@ -13,6 +13,9 @@
     "release": "松开刷新",
     "refreshing": "刷新中..."
   },
+  "loading": {
+    "text": "加载中…"
+  },
   "common": {
     "confirm": "确认",
     "cancel": "取消",

@@ -9,6 +9,7 @@ import { useChildrenStore } from './children'
 
 export const useRecordsStore = defineStore('records', () => {
   const recordsByChild = ref({})
+  const loading = ref(false)
 
   // 在 setup 顶层获取其他 store，使用 storeToRefs 确保响应式追踪正确
   const childrenStore = useChildrenStore()
@@ -88,26 +89,31 @@ export const useRecordsStore = defineStore('records', () => {
    * 加载记录
    */
   const loadRecords = async ({ familyId, childId, since, limit } = {}) => {
-    const result = await recordService.getRecords({ familyId, childId, since, limit })
+    loading.value = true
+    try {
+      const result = await recordService.getRecords({ familyId, childId, since, limit })
 
-    const rows = Array.isArray(result) ? result : []
-    const normalized = rows.map(row => {
-      const payload = typeof row.payloadJson === 'string' ? safeJsonParse(row.payloadJson) : row.payload
-      return {
-        id: row.id,
-        type: row.type,
-        time: row.time,
-        createdByUserId: row.createdByUserId,
-        ...(payload || {})
+      const rows = Array.isArray(result) ? result : []
+      const normalized = rows.map(row => {
+        const payload = typeof row.payloadJson === 'string' ? safeJsonParse(row.payloadJson) : row.payload
+        return {
+          id: row.id,
+          type: row.type,
+          time: row.time,
+          createdByUserId: row.createdByUserId,
+          ...(payload || {})
+        }
+      })
+
+      recordsByChild.value = {
+        ...recordsByChild.value,
+        [childId]: normalized
       }
-    })
 
-    recordsByChild.value = {
-      ...recordsByChild.value,
-      [childId]: normalized
+      return normalized
+    } finally {
+      loading.value = false
     }
-
-    return normalized
   }
 
   /**
@@ -319,6 +325,7 @@ export const useRecordsStore = defineStore('records', () => {
 
   return {
     recordsByChild,
+    loading,
     currentRecords,
     lastFeverMed,
     timeSinceLastFeverMed,

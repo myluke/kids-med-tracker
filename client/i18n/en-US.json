@@ -13,6 +13,9 @@
     "release": "Release to refresh",
     "refreshing": "Refreshing..."
   },
+  "loading": {
+    "text": "Loading…"
+  },
   "common": {
     "confirm": "Confirm",
     "cancel": "Cancel",

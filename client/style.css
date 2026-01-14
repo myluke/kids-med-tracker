@@ -65,6 +65,17 @@ body {
   transform: translate(-50%, -50%) scale(0.8);
 }
 
+/* Fade动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
 /* Modal动画 */
 .modal-enter-active,
 .modal-leave-active {
