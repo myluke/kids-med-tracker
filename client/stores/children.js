@@ -6,6 +6,7 @@ import { lightenHex } from '@/utils/colors'
 export const useChildrenStore = defineStore('children', () => {
   const children = ref([])
   const currentChild = ref(null)
+  const loading = ref(false)
 
   /**
    * 当前选中孩子的对象
@@ -32,15 +33,20 @@ export const useChildrenStore = defineStore('children', () => {
    * 加载孩子列表
    */
   const loadChildren = async (familyId) => {
-    const result = await childService.getChildren({ familyId })
+    loading.value = true
+    try {
+      const result = await childService.getChildren({ familyId })
 
-    const list = Array.isArray(result) ? result : []
-    children.value = list.map(c => ({
-      ...c,
-      lightColor: c.lightColor || lightenHex(c.color || '#8B9DD9')
-    }))
+      const list = Array.isArray(result) ? result : []
+      children.value = list.map(c => ({
+        ...c,
+        lightColor: c.lightColor || lightenHex(c.color || '#8B9DD9')
+      }))
 
-    return children.value
+      return children.value
+    } finally {
+      loading.value = false
+    }
   }
 
   /**
@@ -116,6 +122,7 @@ export const useChildrenStore = defineStore('children', () => {
   return {
     children,
     currentChild,
+    loading,
     currentChildObject,
     currentChildColor,
     currentChildLightColor,
