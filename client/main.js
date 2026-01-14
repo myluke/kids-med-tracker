@@ -197,21 +197,24 @@ router.beforeEach(async (to, _from, next) => {
   const { useUserStore, bootstrap } = await import('./stores')
   const userStore = useUserStore(pinia)
 
-  // 如果还没有初始化，先初始化
-  if (!userStore.initialized) {
-    await bootstrap()
+  // 如果还没有初始化，启动初始化（不等待完成，让页面显示加载状态）
+  if (!userStore.initialized && !userStore.loading) {
+    bootstrap() // 不 await，让页面自己显示骨架屏
   }
 
-  // 检查是否需要认证
-  if (to.meta.requiresAuth && !userStore.user) {
-    // 需要认证但未登录，跳转到登录页
-    next({ name: 'login', query: { redirect: to.fullPath } })
-  } else if (to.name === 'login' && userStore.user) {
-    // 已登录但访问登录页，跳转到首页
-    next({ name: 'home' })
-  } else {
-    next()
+  // 检查是否需要认证（初始化完成后才检查）
+  if (userStore.initialized) {
+    if (to.meta.requiresAuth && !userStore.user) {
+      next({ name: 'login', query: { redirect: to.fullPath } })
+      return
+    }
+    if (to.name === 'login' && userStore.user) {
+      next({ name: 'home' })
+      return
+    }
   }
+
+  next()
 })
 
 const app = createApp(App)
