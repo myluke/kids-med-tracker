@@ -1,10 +1,6 @@
 <script setup>
 import { useI18n } from 'vue-i18n'
-import { storeToRefs } from 'pinia'
-import { useChildrenStore } from '@/stores'
 
-const childrenStore = useChildrenStore()
-const { currentChildColor } = storeToRefs(childrenStore)
 const { t } = useI18n()
 
 const emit = defineEmits(['open-med', 'open-cough', 'open-temp', 'quick-note'])
@@ -12,11 +8,8 @@ const emit = defineEmits(['open-med', 'open-cough', 'open-temp', 'quick-note'])
 
 <template>
   <div class="grid grid-cols-2 gap-3">
-    <button 
-      class="btn-primary flex flex-col items-center py-5"
-      :style="{ 
-        background: `linear-gradient(135deg, ${currentChildColor} 0%, ${currentChildColor}dd 100%)`
-      }"
+    <button
+      class="btn-secondary flex flex-col items-center py-5"
       @click="emit('open-med')"
     >
       <span class="text-3xl mb-2">💊</span>
