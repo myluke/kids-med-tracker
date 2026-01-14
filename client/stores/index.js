@@ -2,21 +2,16 @@
  * Store 统一入口
  */
 
-// 导出所有 store
-export { useUserStore } from './user'
-export { useFamilyStore } from './family'
-export { useChildrenStore } from './children'
-export { useRecordsStore } from './records'
-export { pullRefreshState } from './pullRefresh'
-
-// Re-export 药物配置（向后兼容）
-export { medications, feverMeds } from '@/config/medications'
-
-// 导入 store 用于 bootstrap
+// 导入并导出所有 store
 import { useUserStore } from './user'
 import { useFamilyStore } from './family'
 import { useChildrenStore } from './children'
 import { useRecordsStore } from './records'
+export { useUserStore, useFamilyStore, useChildrenStore, useRecordsStore }
+export { pullRefreshState } from './pullRefresh'
+
+// Re-export 药物配置（向后兼容）
+export { medications, feverMeds } from '@/config/medications'
 
 /**
  * 应用初始化

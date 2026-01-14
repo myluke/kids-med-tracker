@@ -25,7 +25,11 @@ const filteredRecords = computed(() => {
     records = records.filter(r => r.type === currentFilter.value)
   }
 
-  return records.slice(0, 20)
+  // 预处理 display 数据，避免模板中多次调用
+  return records.slice(0, 20).map(record => ({
+    ...record,
+    display: getRecordDisplay(record)
+  }))
 })
 
 const formatTime = (isoString) => {
@@ -123,19 +127,19 @@ const deleteRecord = (recordId) => {
         :key="record.id || (record.time + record.type)"
         class="flex items-start py-3.5 border-b border-gray-100 last:border-0"
       >
-        <div 
+        <div
           class="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0 mr-3"
-          :class="getRecordDisplay(record).iconBg"
+          :class="record.display.iconBg"
         >
-          {{ getRecordDisplay(record).icon }}
+          {{ record.display.icon }}
         </div>
-        
+
         <div class="flex-1 min-w-0">
           <div class="font-medium text-gray-800 text-sm">
-            {{ getRecordDisplay(record).main }}
+            {{ record.display.main }}
           </div>
           <div class="text-xs text-gray-500 truncate">
-            {{ getRecordDisplay(record).sub }}
+            {{ record.display.sub }}
           </div>
         </div>
         

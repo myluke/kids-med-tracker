@@ -12,16 +12,16 @@ const { t } = useI18n()
       v-for="child in childrenStore.children"
       :key="child.id"
       class="flex-1 p-4 rounded-xl border-3 transition-all text-center relative overflow-hidden"
-      :class="[
-        childrenStore.currentChild === child.id
-          ? 'border-current shadow-lg'
-          : 'border-transparent',
-        child.id === 'child1' ? 'bg-dabo-light' : 'bg-erbao-light'
-      ]"
-      :style="childrenStore.currentChild === child.id ? {
-        borderColor: child.color,
-        boxShadow: `0 4px 15px ${child.color}40`
-      } : {}"
+      :class="childrenStore.currentChild === child.id
+        ? 'border-current shadow-lg'
+        : 'border-transparent'"
+      :style="{
+        backgroundColor: child.lightColor,
+        ...(childrenStore.currentChild === child.id ? {
+          borderColor: child.color,
+          boxShadow: `0 4px 15px ${child.color}40`
+        } : {})
+      }"
       @click="switchChild(child.id)"
     >
       <div 

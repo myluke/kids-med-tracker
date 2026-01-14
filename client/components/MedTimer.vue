@@ -1,10 +1,15 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRecordsStore } from '@/stores'
+import { useRecordsStore, medications } from '@/stores'
 
 const recordsStore = useRecordsStore()
 const { t } = useI18n()
+
+// 从配置中获取退烧药间隔阈值
+const feverMedIntervals = medications.filter(m => m.isFeverMed).map(m => m.interval)
+const MIN_INTERVAL = Math.min(...feverMedIntervals) // 最短间隔 (4h)
+const MAX_INTERVAL = Math.max(...feverMedIntervals) // 最长间隔 (6h)
 
 // 每分钟更新一次
 const now = ref(Date.now())
@@ -42,7 +47,7 @@ const timerData = computed(() => {
   const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
   const display = `${hours}:${minutes.toString().padStart(2, '0')}`
 
-  if (diffHours >= 6) {
+  if (diffHours >= MAX_INTERVAL) {
     return {
       display,
       label: t('timer.sinceLast', { drug: lastMed.drug }),
@@ -50,7 +55,7 @@ const timerData = computed(() => {
       statusText: t('timer.canTake'),
       canTake: true
     }
-  } else if (diffHours >= 4) {
+  } else if (diffHours >= MIN_INTERVAL) {
     return {
       display,
       label: t('timer.sinceLast', { drug: lastMed.drug }),
@@ -59,8 +64,8 @@ const timerData = computed(() => {
       canTake: true
     }
   } else {
-    const waitHours = Math.floor(4 - diffHours)
-    const waitMins = Math.ceil((4 - diffHours - waitHours) * 60)
+    const waitHours = Math.floor(MIN_INTERVAL - diffHours)
+    const waitMins = Math.ceil((MIN_INTERVAL - diffHours - waitHours) * 60)
     return {
       display,
       label: t('timer.needWait', { hours: waitHours, mins: waitMins }),

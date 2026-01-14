@@ -62,65 +62,35 @@ const handleAddChildSave = async (data) => {
   }
 }
 
-// 面板显示状态
-const showMedPanel = ref(false)
-const showCoughPanel = ref(false)
-const showTempPanel = ref(false)
-const showNotePanel = ref(false)
-
-// 关闭所有面板
-const closeAllPanels = () => {
-  showMedPanel.value = false
-  showCoughPanel.value = false
-  showTempPanel.value = false
-  showNotePanel.value = false
-}
-
-// 打开面板
-const openMedPanel = () => {
-  closeAllPanels()
-  showMedPanel.value = true
-}
-const openCoughPanel = () => {
-  closeAllPanels()
-  showCoughPanel.value = true
-}
-const openTempPanel = () => {
-  closeAllPanels()
-  showTempPanel.value = true
-}
-
-// 快速备注
-const quickNote = () => {
-  closeAllPanels()
-  showNotePanel.value = true
-}
+// 面板显示状态: 'med' | 'cough' | 'temp' | 'note' | null
+const activePanel = ref(null)
+const closePanel = () => { activePanel.value = null }
 
 // 提交备注
 const submitNote = (note) => {
   recordsStore.addNote(note)
-  showNotePanel.value = false
+  closePanel()
   toast(t('toast.noteAdded'))
 }
 
 // 提交用药
 const submitMed = ({ drug, dosage, temp }) => {
   recordsStore.addMedRecord(drug, dosage, temp)
-  showMedPanel.value = false
+  closePanel()
   toast(t('toast.medRecorded', { drug }))
 }
 
 // 提交咳嗽
 const submitCough = ({ level, note }) => {
   recordsStore.addCoughRecord(level, note)
-  showCoughPanel.value = false
+  closePanel()
   toast(t('toast.coughRecorded', { level }))
 }
 
 // 提交体温
 const submitTemp = (value) => {
   recordsStore.addTempRecord(value)
-  showTempPanel.value = false
+  closePanel()
   toast(t('toast.tempRecorded', { value }))
 }
 
@@ -151,10 +121,10 @@ const onRefresh = async (done) => {
 
         <!-- 快速操作 -->
         <QuickActions
-          @open-med="openMedPanel"
-          @open-cough="openCoughPanel"
-          @open-temp="openTempPanel"
-          @quick-note="quickNote"
+          @open-med="activePanel = 'med'"
+          @open-cough="activePanel = 'cough'"
+          @open-temp="activePanel = 'temp'"
+          @quick-note="activePanel = 'note'"
         />
 
         <!-- 今日统计 -->
@@ -167,44 +137,44 @@ const onRefresh = async (done) => {
 
     <!-- 用药弹层 -->
     <BottomSheet
-      :show="showMedPanel"
-      @close="showMedPanel = false"
+      :show="activePanel === 'med'"
+      @close="closePanel"
     >
       <MedPanel
-        @close="showMedPanel = false"
+        @close="closePanel"
         @submit="submitMed"
       />
     </BottomSheet>
 
     <!-- 咳嗽弹层 -->
     <BottomSheet
-      :show="showCoughPanel"
-      @close="showCoughPanel = false"
+      :show="activePanel === 'cough'"
+      @close="closePanel"
     >
       <CoughPanel
-        @close="showCoughPanel = false"
+        @close="closePanel"
         @submit="submitCough"
       />
     </BottomSheet>
 
     <!-- 体温弹层 -->
     <BottomSheet
-      :show="showTempPanel"
-      @close="showTempPanel = false"
+      :show="activePanel === 'temp'"
+      @close="closePanel"
     >
       <TempPanel
-        @close="showTempPanel = false"
+        @close="closePanel"
         @submit="submitTemp"
       />
     </BottomSheet>
 
     <!-- 备注弹层 -->
     <BottomSheet
-      :show="showNotePanel"
-      @close="showNotePanel = false"
+      :show="activePanel === 'note'"
+      @close="closePanel"
     >
       <NotePanel
-        @close="showNotePanel = false"
+        @close="closePanel"
         @submit="submitNote"
       />
     </BottomSheet>

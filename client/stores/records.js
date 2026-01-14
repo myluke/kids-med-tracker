@@ -45,31 +45,32 @@ export const useRecordsStore = defineStore('records', () => {
   const todayStats = computed(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
+    const todayTime = today.getTime()
 
-    // 单次遍历统计今日记录
-    const counts = { med: 0, cough: 0 }
-    for (const r of currentRecords.value) {
-      if (new Date(r.time) >= today) {
-        if (r.type === 'med') counts.med++
-        else if (r.type === 'cough') counts.cough++
-      }
-    }
-
-    // 查找最新体温
+    // 单次遍历完成所有统计
+    let medCount = 0
+    let coughCount = 0
     let lastTemp = null
-    let latestTime = 0
+    let latestTempTime = 0
+
     for (const r of currentRecords.value) {
+      const recordTime = new Date(r.time).getTime()
+
+      // 统计今日记录
+      if (recordTime >= todayTime) {
+        if (r.type === 'med') medCount++
+        else if (r.type === 'cough') coughCount++
+      }
+
+      // 查找最新体温
       const hasTemp = r.type === 'temp' || (r.type === 'med' && r.temp)
-      if (hasTemp) {
-        const time = new Date(r.time).getTime()
-        if (time > latestTime) {
-          latestTime = time
-          lastTemp = r.type === 'temp' ? r.value : r.temp
-        }
+      if (hasTemp && recordTime > latestTempTime) {
+        latestTempTime = recordTime
+        lastTemp = r.type === 'temp' ? r.value : r.temp
       }
     }
 
-    return { medCount: counts.med, coughCount: counts.cough, lastTemp }
+    return { medCount, coughCount, lastTemp }
   })
 
   /**
