@@ -5,7 +5,7 @@
  */
 export const medications = [
   { name: '布洛芬', icon: '🔥', isFeverMed: true, interval: 6 },
-  { name: '对乙酰氨基酚', icon: '💧', isFeverMed: true, interval: 4 },
+  { name: '美林', icon: '💧', isFeverMed: true, interval: 6 },
   { name: '奥司他韦', icon: '💊', isFeverMed: false, interval: 12 },
   { name: '止咳糖浆', icon: '🍯', isFeverMed: false, interval: 0 },
   { name: '小儿氨酚黄那敏', icon: '🌿', isFeverMed: false, interval: 0 },

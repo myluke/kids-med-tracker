@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useChildrenStore } from '@/stores'
+import PanelHeader from './PanelHeader.vue'
 
 const childrenStore = useChildrenStore()
 const { currentChildColor, currentChildLightColor } = storeToRefs(childrenStore)
@@ -29,15 +30,7 @@ const submit = () => {
 
 <template>
   <div>
-    <div class="flex justify-between items-center mb-4">
-      <span class="font-semibold text-gray-800">{{ t('panels.temp.title') }}</span>
-      <button
-        class="text-2xl text-gray-400 p-1"
-        @click="emit('close')"
-      >
-        &times;
-      </button>
-    </div>
+    <PanelHeader :title="t('panels.temp.title')" @close="emit('close')" />
 
     <!-- 快捷温度按钮 -->
     <div class="flex flex-wrap gap-2 mb-4">

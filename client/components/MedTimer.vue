@@ -76,21 +76,14 @@ const timerData = computed(() => {
   }
 })
 
-const statusClasses = computed(() => {
-  const status = timerData.value.status
-  return {
-    badge: {
-      safe: 'bg-mint-light text-mint-dark',
-      warning: 'bg-yellow-100 text-yellow-800',
-      danger: 'bg-erbao-light text-erbao-dark'
-    }[status],
-    time: {
-      safe: 'text-mint',
-      warning: 'text-yellow-500',
-      danger: 'text-erbao'
-    }[status]
-  }
-})
+// 状态样式映射
+const STATUS_STYLES = {
+  safe: { badge: 'bg-mint-light text-mint-dark', time: 'text-mint' },
+  warning: { badge: 'bg-yellow-100 text-yellow-800', time: 'text-yellow-500' },
+  danger: { badge: 'bg-erbao-light text-erbao-dark', time: 'text-erbao' }
+}
+
+const statusClasses = computed(() => STATUS_STYLES[timerData.value.status])
 </script>
 
 <template>

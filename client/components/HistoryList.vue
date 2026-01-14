@@ -25,10 +25,11 @@ const filteredRecords = computed(() => {
     records = records.filter(r => r.type === currentFilter.value)
   }
 
-  // 预处理 display 数据，避免模板中多次调用
+  // 预处理 display 和 formattedTime，避免模板中多次调用
   return records.slice(0, 20).map(record => ({
     ...record,
-    display: getRecordDisplay(record)
+    display: getRecordDisplay(record),
+    formattedTime: formatTime(record.time)
   }))
 })
 
@@ -144,8 +145,8 @@ const deleteRecord = (recordId) => {
         </div>
         
         <div class="text-right text-xs text-gray-400 flex-shrink-0 ml-2">
-          <div>{{ formatTime(record.time).date }}</div>
-          <div>{{ formatTime(record.time).time }}</div>
+          <div>{{ record.formattedTime.date }}</div>
+          <div>{{ record.formattedTime.time }}</div>
         </div>
 
         <button

@@ -1,15 +1,13 @@
 <script setup>
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRecordsStore, useFamilyStore, useChildrenStore } from '@/stores'
+import { useRecordsStore } from '@/stores'
 import ChildTabs from '@/components/ChildTabs.vue'
 import TempChart from '@/components/TempChart.vue'
 import CoughChart from '@/components/CoughChart.vue'
 import PullToRefresh from '@/components/PullToRefresh.vue'
 
 const recordsStore = useRecordsStore()
-const familyStore = useFamilyStore()
-const childrenStore = useChildrenStore()
 const { t } = useI18n()
 
 const recoveryStats = computed(() => recordsStore.getRecoveryStats())
@@ -17,12 +15,7 @@ const recoveryStats = computed(() => recordsStore.getRecoveryStats())
 // 下拉刷新
 const onRefresh = async (done) => {
   try {
-    if (familyStore.currentFamilyId && childrenStore.currentChild) {
-      await recordsStore.loadRecords({
-        familyId: familyStore.currentFamilyId,
-        childId: childrenStore.currentChild
-      })
-    }
+    await recordsStore.refreshCurrentChildRecords()
   } finally {
     done()
   }

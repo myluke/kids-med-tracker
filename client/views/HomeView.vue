@@ -97,12 +97,7 @@ const submitTemp = (value) => {
 // 下拉刷新
 const onRefresh = async (done) => {
   try {
-    if (familyStore.currentFamilyId && childrenStore.currentChild) {
-      await recordsStore.loadRecords({
-        familyId: familyStore.currentFamilyId,
-        childId: childrenStore.currentChild
-      })
-    }
+    await recordsStore.refreshCurrentChildRecords()
   } finally {
     done()
   }

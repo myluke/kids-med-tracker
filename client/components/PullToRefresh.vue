@@ -24,6 +24,7 @@ const pullDistance = ref(0)
 const startY = ref(0)
 const containerRef = ref(null)
 const isTouchValid = ref(false)  // 标记当前触摸是否从顶部开始
+const hasHitTopBoundary = ref(false)  // 是否已触碰顶部边界
 
 // 阻尼系数：越拉越慢
 const dampingFactor = 0.4
@@ -61,13 +62,20 @@ const onTouchMove = (e) => {
   if (!isAtTop()) {
     pullDistance.value = 0
     state.value = 'idle'
+    hasHitTopBoundary.value = false
     return
   }
 
   const currentY = e.touches[0].clientY
   const diff = currentY - startY.value
 
-  if (diff > 0) {
+  // 在顶部尝试上滑 = 触碰顶部边界
+  if (diff < 0) {
+    hasHitTopBoundary.value = true
+  }
+
+  // 只有触碰过边界后才能触发下拉刷新
+  if (diff > 0 && hasHitTopBoundary.value) {
     e.preventDefault()
     pullDistance.value = diff
 
@@ -80,8 +88,9 @@ const onTouchMove = (e) => {
 }
 
 const onTouchEnd = () => {
-  // 重置触摸有效性
+  // 重置触摸状态
   isTouchValid.value = false
+  hasHitTopBoundary.value = false
 
   if (props.disabled || state.value === 'refreshing') return
 

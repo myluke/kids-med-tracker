@@ -74,6 +74,17 @@ export const useRecordsStore = defineStore('records', () => {
   })
 
   /**
+   * 刷新当前孩子的记录（用于下拉刷新）
+   */
+  const refreshCurrentChildRecords = async () => {
+    const familyStore = useFamilyStore()
+    const familyId = familyStore.currentFamilyId
+    const childId = currentChild.value
+    if (!familyId || !childId) return
+    return loadRecords({ familyId, childId })
+  }
+
+  /**
    * 加载记录
    */
   const loadRecords = async ({ familyId, childId, since, limit } = {}) => {
@@ -255,25 +266,24 @@ export const useRecordsStore = defineStore('records', () => {
    */
   const getCoughData = (days = 3, t) => {
     const translate = typeof t === 'function' ? t : (key) => key
+    const labelKeys = ['common.dayBeforeYesterday', 'common.yesterday', 'common.today']
 
     const result = []
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date()
       date.setDate(date.getDate() - i)
       date.setHours(0, 0, 0, 0)
-      const nextDate = new Date(date)
-      nextDate.setDate(nextDate.getDate() + 1)
+      const startTime = date.getTime()
+      const endTime = startTime + 24 * 60 * 60 * 1000
 
-      const count = currentRecords.value.filter(
-        r => r.type === 'cough' &&
-             new Date(r.time) >= date &&
-             new Date(r.time) < nextDate
-      ).length
-
-      const labelKey = i === 0 ? 'common.today' : (i === 1 ? 'common.yesterday' : 'common.dayBeforeYesterday')
+      const count = currentRecords.value.filter(r => {
+        if (r.type !== 'cough') return false
+        const recordTime = new Date(r.time).getTime()
+        return recordTime >= startTime && recordTime < endTime
+      }).length
 
       result.push({
-        label: translate(labelKey),
+        label: translate(labelKeys[days - 1 - i]),
         count
       })
     }
@@ -315,6 +325,7 @@ export const useRecordsStore = defineStore('records', () => {
     todayStats,
 
     loadRecords,
+    refreshCurrentChildRecords,
     addRecord,
     addMedRecord,
     addCoughRecord,

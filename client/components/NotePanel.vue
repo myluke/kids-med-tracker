@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useChildrenStore } from '@/stores'
+import PanelHeader from './PanelHeader.vue'
 
 const childrenStore = useChildrenStore()
 const { currentChildColor } = storeToRefs(childrenStore)
@@ -29,15 +30,7 @@ const handleKeydown = (e) => {
 
 <template>
   <div>
-    <div class="flex justify-between items-center mb-4">
-      <span class="font-semibold text-gray-800">{{ t('panels.note.title') }}</span>
-      <button
-        class="text-2xl text-gray-400 p-1"
-        @click="emit('close')"
-      >
-        &times;
-      </button>
-    </div>
+    <PanelHeader :title="t('panels.note.title')" @close="emit('close')" />
 
     <!-- 备注输入 -->
     <div class="mb-4">
