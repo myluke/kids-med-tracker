@@ -192,7 +192,7 @@ watchEffect(() => {
 
 .refresh-indicator {
   position: fixed;
-  top: 0;
+  top: 108px; /* Header 高度: pt-5(20px) + 内容(~48px) + pb-8(32px) + 圆角(~8px) */
   left: 0;
   right: 0;
   z-index: 100;
