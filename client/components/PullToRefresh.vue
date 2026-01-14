@@ -23,6 +23,7 @@ const state = ref('idle')
 const pullDistance = ref(0)
 const startY = ref(0)
 const containerRef = ref(null)
+const isTouchValid = ref(false)  // 标记当前触摸是否从顶部开始
 
 // 阻尼系数：越拉越慢
 const dampingFactor = 0.4
@@ -41,7 +42,10 @@ const isAtTop = () => {
 
 const onTouchStart = (e) => {
   if (props.disabled || state.value === 'refreshing') return
-  if (!isAtTop()) return
+
+  // 只有在顶部开始的触摸才有效
+  isTouchValid.value = isAtTop()
+  if (!isTouchValid.value) return
 
   startY.value = e.touches[0].clientY
   state.value = 'idle'
@@ -49,6 +53,11 @@ const onTouchStart = (e) => {
 
 const onTouchMove = (e) => {
   if (props.disabled || state.value === 'refreshing') return
+
+  // 如果触摸不是从顶部开始的，忽略
+  if (!isTouchValid.value) return
+
+  // 如果中途滚动离开了顶部，取消下拉状态
   if (!isAtTop()) {
     pullDistance.value = 0
     state.value = 'idle'
@@ -71,6 +80,9 @@ const onTouchMove = (e) => {
 }
 
 const onTouchEnd = () => {
+  // 重置触摸有效性
+  isTouchValid.value = false
+
   if (props.disabled || state.value === 'refreshing') return
 
   if (state.value === 'ready') {
