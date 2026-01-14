@@ -109,47 +109,49 @@ watchEffect(() => {
     @touchmove="onTouchMove"
     @touchend="onTouchEnd"
   >
-    <!-- 刷新指示器 -->
-    <div
-      class="refresh-indicator"
-      :style="{ height: `${displayDistance}px` }"
-    >
+    <!-- 刷新指示器 - 传送到 body 避免受 transform 影响 -->
+    <Teleport to="body">
       <div
-        v-if="state !== 'idle' || displayDistance > 0"
-        class="refresh-content"
+        class="refresh-indicator"
+        :style="{ height: `${displayDistance}px` }"
       >
-        <!-- 刷新中 -->
-        <template v-if="state === 'refreshing'">
-          <svg
-            class="refresh-icon spinning"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M21 12a9 9 0 11-6.219-8.56" />
-          </svg>
-          <span class="refresh-text">{{ t('pullToRefresh.refreshing') }}</span>
-        </template>
+        <div
+          v-if="state !== 'idle' || displayDistance > 0"
+          class="refresh-content"
+        >
+          <!-- 刷新中 -->
+          <template v-if="state === 'refreshing'">
+            <svg
+              class="refresh-icon spinning"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M21 12a9 9 0 11-6.219-8.56" />
+            </svg>
+            <span class="refresh-text">{{ t('pullToRefresh.refreshing') }}</span>
+          </template>
 
-        <!-- 下拉中 / 可释放 -->
-        <template v-else>
-          <svg
-            class="refresh-icon"
-            :style="{ transform: `rotate(${iconRotation}deg)` }"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M12 5v14M5 12l7 7 7-7" />
-          </svg>
-          <span class="refresh-text">
-            {{ state === 'ready' ? t('pullToRefresh.release') : t('pullToRefresh.pull') }}
-          </span>
-        </template>
+          <!-- 下拉中 / 可释放 -->
+          <template v-else>
+            <svg
+              class="refresh-icon"
+              :style="{ transform: `rotate(${iconRotation}deg)` }"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M12 5v14M5 12l7 7 7-7" />
+            </svg>
+            <span class="refresh-text">
+              {{ state === 'ready' ? t('pullToRefresh.release') : t('pullToRefresh.pull') }}
+            </span>
+          </template>
+        </div>
       </div>
-    </div>
+    </Teleport>
 
     <!-- 内容区域 -->
     <div class="refresh-body">
