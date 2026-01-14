@@ -2,7 +2,7 @@
 import { ref, computed, provide, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useRecordsStore, useChildrenStore } from './stores'
+import { useRecordsStore, useChildrenStore, pullRefreshState } from './stores'
 
 const router = useRouter()
 const route = useRoute()
@@ -64,6 +64,12 @@ provide('exportData', exportData)
 const themeClass = computed(() => {
   return childrenStore.currentChild === 'child2' ? 'theme-erbao' : 'theme-dabo'
 })
+
+// 下拉刷新整体位移样式
+const pullTransformStyle = computed(() => ({
+  transform: `translateY(${pullRefreshState.displayDistance}px)`,
+  transition: pullRefreshState.state === 'idle' ? 'transform 0.3s ease-out' : 'none'
+}))
 </script>
 
 <template>
@@ -71,35 +77,38 @@ const themeClass = computed(() => {
     :class="themeClass"
     class="min-h-screen"
   >
-    <!-- Header -->
-    <header class="bg-gradient-to-br from-dabo-light to-warm-200 px-5 pt-5 pb-8 rounded-b-3xl relative">
-      <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
-        <img
-          src="/logo.svg"
-          alt="App Logo"
-          class="w-10 h-10 drop-shadow-sm"
-        >
-        <span>{{ t('app.title') }}</span>
-      </h1>
-      <p class="text-gray-500 text-sm mt-1">
-        {{ t('app.subtitle') }}
-      </p>
-      <div class="absolute right-5 top-5 text-sm text-gray-500 bg-white/70 px-3 py-1.5 rounded-full">
-        {{ currentTime }}
-      </div>
-    </header>
+    <!-- 可下拉移动的内容区域 -->
+    <div :style="pullTransformStyle">
+      <!-- Header -->
+      <header class="bg-gradient-to-br from-dabo-light to-warm-200 px-5 pt-5 pb-8 rounded-b-3xl relative">
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
+          <img
+            src="/logo.svg"
+            alt="App Logo"
+            class="w-10 h-10 drop-shadow-sm"
+          >
+          <span>{{ t('app.title') }}</span>
+        </h1>
+        <p class="text-gray-500 text-sm mt-1">
+          {{ t('app.subtitle') }}
+        </p>
+        <div class="absolute right-5 top-5 text-sm text-gray-500 bg-white/70 px-3 py-1.5 rounded-full">
+          {{ currentTime }}
+        </div>
+      </header>
 
-    <!-- Main Content -->
-    <main class="px-4 -mt-4">
-      <router-view v-slot="{ Component }">
-        <transition
-          name="fade"
-          mode="out-in"
-        >
-          <component :is="Component" />
-        </transition>
-      </router-view>
-    </main>
+      <!-- Main Content -->
+      <main class="px-4 -mt-4">
+        <router-view v-slot="{ Component }">
+          <transition
+            name="fade"
+            mode="out-in"
+          >
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </main>
+    </div>
 
     <!-- Bottom Navigation -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white flex justify-around py-3 pb-6 shadow-card-lg rounded-t-2xl z-50">

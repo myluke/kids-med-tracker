@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { pullRefreshState } from '@/stores'
 
 const props = defineProps({
   disabled: {
@@ -92,6 +93,12 @@ const iconRotation = computed(() => {
   const progress = Math.min(displayDistance.value / props.threshold, 1)
   return progress * 180
 })
+
+// 同步状态到全局
+watchEffect(() => {
+  pullRefreshState.displayDistance = displayDistance.value
+  pullRefreshState.state = state.value
+})
 </script>
 
 <template>
@@ -145,13 +152,7 @@ const iconRotation = computed(() => {
     </div>
 
     <!-- 内容区域 -->
-    <div
-      class="refresh-body"
-      :style="{
-        transform: `translateY(${displayDistance}px)`,
-        transition: state === 'idle' ? 'transform 0.3s ease-out' : 'none'
-      }"
-    >
+    <div class="refresh-body">
       <slot />
     </div>
   </div>
