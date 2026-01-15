@@ -10,6 +10,9 @@ const recordsStore = useRecordsStore()
 const childrenStore = useChildrenStore()
 const { t, locale } = useI18n()
 
+// 登录页隐藏全局 Header 和底部导航
+const isLoginPage = computed(() => route.name === 'login')
+
 // Toast状态
 const toastMessage = ref('')
 const showToast = ref(false)
@@ -77,8 +80,11 @@ const pullTransformStyle = computed(() => ({
     :class="themeClass"
     class="min-h-screen"
   >
-    <!-- Header - 固定不动 -->
-    <header class="bg-gradient-to-br from-dabo-light to-warm-200 px-5 pt-5 pb-8 rounded-b-3xl relative">
+    <!-- Header - 固定不动（登录页隐藏） -->
+    <header
+      v-if="!isLoginPage"
+      class="bg-gradient-to-br from-dabo-light to-warm-200 px-5 pt-5 pb-8 rounded-b-3xl relative"
+    >
       <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
         <img
           src="/logo.svg"
@@ -110,8 +116,11 @@ const pullTransformStyle = computed(() => ({
       </main>
     </div>
 
-    <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white flex justify-around pt-2 pb-safe shadow-card-lg rounded-t-xl z-50">
+    <!-- Bottom Navigation（登录页隐藏） -->
+    <nav
+      v-if="!isLoginPage"
+      class="fixed bottom-0 left-0 right-0 bg-white flex justify-around pt-2 pb-safe shadow-card-lg rounded-t-xl z-50"
+    >
       <button
         class="flex flex-col items-center gap-1 px-4 py-1.5 transition-colors"
         :class="route.path === '/' ? 'text-dabo' : 'text-gray-400'"
