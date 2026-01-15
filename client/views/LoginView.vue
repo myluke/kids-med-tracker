@@ -166,7 +166,7 @@ onMounted(() => {
     </div>
 
     <!-- 主内容区 -->
-    <div class="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-12">
+    <div class="relative z-10 min-h-full flex flex-col items-center justify-center px-6 py-12">
       <!-- 品牌区 -->
       <div class="brand-section mb-8 text-center">
         <img
@@ -322,7 +322,12 @@ onMounted(() => {
 <style scoped>
 /* 页面背景 - 固定定位覆盖全屏 */
 .login-page {
-  @apply fixed inset-0 overflow-y-auto;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow-y: auto;
   background: linear-gradient(
     165deg,
     #E8ECF8 0%,
