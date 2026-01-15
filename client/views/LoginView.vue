@@ -320,9 +320,9 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* 页面背景 */
+/* 页面背景 - 固定定位覆盖全屏 */
 .login-page {
-  @apply min-h-screen relative;
+  @apply fixed inset-0 overflow-y-auto;
   background: linear-gradient(
     165deg,
     #E8ECF8 0%,
