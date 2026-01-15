@@ -42,7 +42,10 @@ const showAddChildModal = ref(false)
 
 watchEffect(() => {
   if (userStore.loading) return
-  if (!userStore.user) return
+  if (!userStore.user) {
+    router.replace({ name: 'login' })
+    return
+  }
   if (!hasFamilies.value) router.replace({ name: 'no-family' })
 })
 
