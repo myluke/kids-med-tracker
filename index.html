@@ -3,16 +3,52 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- SEO Meta -->
+    <meta name="description" content="智能儿童用药追踪助手：记录用药时间、监测体温、追踪咳嗽症状。支持多孩管理，自动提醒退烧药间隔，防止重复用药。PWA应用，离线可用。">
+    <meta name="keywords" content="儿童用药,用药追踪,体温记录,症状监测,多孩家庭,用药提醒,退烧药间隔">
+    <meta name="author" content="Luke">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="宝贝用药追踪 - 儿童用药记录与症状监测">
+    <meta property="og:description" content="智能追踪孩子用药、体温、咳嗽症状。支持多孩管理，自动提醒用药间隔。">
+    <meta property="og:locale" content="zh_CN">
+    <meta property="og:site_name" content="宝贝用药追踪">
+
+    <!-- PWA -->
     <meta name="theme-color" content="#FFF8F0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="description" content="专为多孩家庭设计的儿童用药与症状追踪工具">
+
+    <!-- Icons -->
     <link rel="icon" type="image/svg+xml" href="/logo.svg">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Google tag (gtag.js) -->
+
+    <!-- Schema.org -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "宝贝用药追踪",
+      "description": "专为多孩家庭设计的儿童用药与症状追踪PWA应用",
+      "applicationCategory": "HealthApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "CNY"
+      }
+    }
+    </script>
+
+    <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-T9BMGY12M8"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -20,7 +56,8 @@
       gtag('js', new Date());
       gtag('config', 'G-T9BMGY12M8');
     </script>
-    <title>宝贝用药追踪</title>
+
+    <title>宝贝用药追踪 - 儿童用药记录与症状监测工具</title>
   </head>
   <body>
     <div id="app"></div>
