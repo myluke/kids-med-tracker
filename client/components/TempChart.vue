@@ -2,14 +2,14 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Line } from 'vue-chartjs'
-import { 
-  Chart as ChartJS, 
-  CategoryScale, 
-  LinearScale, 
-  PointElement, 
-  LineElement, 
-  Title, 
-  Tooltip, 
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
   Legend,
   Filler
 } from 'chart.js'
@@ -27,12 +27,19 @@ ChartJS.register(
   Filler
 )
 
+const props = defineProps({
+  episodeId: {
+    type: String,
+    default: null
+  }
+})
+
 const childrenStore = useChildrenStore()
 const { currentChildColor: currentColor } = storeToRefs(childrenStore)
 const recordsStore = useRecordsStore()
 const { t, locale } = useI18n()
 
-const tempData = computed(() => recordsStore.getTempData(24))
+const tempData = computed(() => recordsStore.getTempData(24, props.episodeId))
 
 const chartData = computed(() => {
   if (tempData.value.length === 0) {

@@ -2,14 +2,14 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Bar } from 'vue-chartjs'
-import { 
-  Chart as ChartJS, 
-  CategoryScale, 
-  LinearScale, 
-  BarElement, 
-  Title, 
-  Tooltip, 
-  Legend 
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
 } from 'chart.js'
 import { storeToRefs } from 'pinia'
 import { useChildrenStore, useRecordsStore } from '@/stores'
@@ -23,12 +23,19 @@ ChartJS.register(
   Legend
 )
 
+const props = defineProps({
+  episodeId: {
+    type: String,
+    default: null
+  }
+})
+
 const childrenStore = useChildrenStore()
 const { currentChildColor: currentColor } = storeToRefs(childrenStore)
 const recordsStore = useRecordsStore()
 const { t } = useI18n()
 
-const coughData = computed(() => recordsStore.getCoughData(3, t))
+const coughData = computed(() => recordsStore.getCoughData(3, t, props.episodeId))
 
 const chartData = computed(() => {
   return {

@@ -85,7 +85,11 @@
     "totalMeds": "总用药次数",
     "avgCough": "平均每日咳嗽",
     "dayUnit": "天",
-    "timesUnit": "次"
+    "timesUnit": "次",
+    "selectEpisode": "病程",
+    "currentEpisode": "当前病程",
+    "allRecords": "全部记录",
+    "ongoing": "至今"
   },
   "todayStats": {
     "med": "今日用药",

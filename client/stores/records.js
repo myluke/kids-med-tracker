@@ -277,12 +277,21 @@ export const useRecordsStore = defineStore('records', () => {
 
   /**
    * 获取体温数据（用于图表）
+   * @param {number} hours - 时间范围（小时）
+   * @param {string|null} episodeId - 可选，按病程ID过滤
    */
-  const getTempData = (hours = 24) => {
+  const getTempData = (hours = 24, episodeId = null) => {
     const cutoff = Date.now() - hours * 60 * 60 * 1000
     return currentRecords.value
-      .filter(r => (r.type === 'temp' || (r.type === 'med' && r.temp)) &&
-                   new Date(r.time).getTime() >= cutoff)
+      .filter(r => {
+        // 类型过滤
+        if (r.type !== 'temp' && !(r.type === 'med' && r.temp)) return false
+        // 时间过滤
+        if (new Date(r.time).getTime() < cutoff) return false
+        // 病程过滤
+        if (episodeId && r.episodeId !== episodeId) return false
+        return true
+      })
       .map(r => ({
         time: new Date(r.time),
         value: r.type === 'temp' ? r.value : r.temp
@@ -292,8 +301,11 @@ export const useRecordsStore = defineStore('records', () => {
 
   /**
    * 获取咳嗽统计数据
+   * @param {number} days - 天数范围
+   * @param {Function} t - 翻译函数
+   * @param {string|null} episodeId - 可选，按病程ID过滤
    */
-  const getCoughData = (days = 3, t) => {
+  const getCoughData = (days = 3, t, episodeId = null) => {
     const translate = typeof t === 'function' ? t : (key) => key
     const labelKeys = ['common.dayBeforeYesterday', 'common.yesterday', 'common.today']
 
@@ -308,7 +320,10 @@ export const useRecordsStore = defineStore('records', () => {
       const count = currentRecords.value.filter(r => {
         if (r.type !== 'cough') return false
         const recordTime = new Date(r.time).getTime()
-        return recordTime >= startTime && recordTime < endTime
+        if (recordTime < startTime || recordTime >= endTime) return false
+        // 病程过滤
+        if (episodeId && r.episodeId !== episodeId) return false
+        return true
       }).length
 
       result.push({
@@ -321,19 +336,25 @@ export const useRecordsStore = defineStore('records', () => {
 
   /**
    * 获取恢复统计
+   * @param {string|null} episodeId - 可选，按病程ID过滤
    */
-  const getRecoveryStats = () => {
-    const allRecords = currentRecords.value
-    if (allRecords.length === 0) {
+  const getRecoveryStats = (episodeId = null) => {
+    let records = currentRecords.value
+    // 病程过滤
+    if (episodeId) {
+      records = records.filter(r => r.episodeId === episodeId)
+    }
+
+    if (records.length === 0) {
       return { totalDays: 0, totalMeds: 0, avgCough: 0 }
     }
 
-    const dates = new Set(allRecords.map(r =>
+    const dates = new Set(records.map(r =>
       new Date(r.time).toDateString()
     ))
     const totalDays = dates.size
-    const totalMeds = allRecords.filter(r => r.type === 'med').length
-    const coughCount = allRecords.filter(r => r.type === 'cough').length
+    const totalMeds = records.filter(r => r.type === 'med').length
+    const coughCount = records.filter(r => r.type === 'cough').length
     const avgCough = totalDays > 0 ? (coughCount / totalDays).toFixed(1) : 0
 
     return { totalDays, totalMeds, avgCough }

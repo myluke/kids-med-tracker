@@ -85,7 +85,11 @@
     "totalMeds": "Total meds",
     "avgCough": "Avg cough/day",
     "dayUnit": "days",
-    "timesUnit": "times"
+    "timesUnit": "times",
+    "selectEpisode": "Episode",
+    "currentEpisode": "Current",
+    "allRecords": "All records",
+    "ongoing": "ongoing"
   },
   "todayStats": {
     "med": "Meds today",
