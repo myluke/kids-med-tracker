@@ -78,11 +78,30 @@ CREATE TABLE IF NOT EXISTS public.children (
 
 COMMENT ON TABLE public.children IS '孩子信息';
 
+-- 病程表
+CREATE TABLE IF NOT EXISTS public.illness_episodes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  family_id uuid NOT NULL REFERENCES public.families(id) ON DELETE CASCADE,
+  child_id uuid NOT NULL REFERENCES public.children(id) ON DELETE CASCADE,
+  started_at timestamptz NOT NULL DEFAULT now(),
+  ended_at timestamptz,  -- NULL = 进行中
+  status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'recovered')),
+  summary_json jsonb DEFAULT '{}'::jsonb,  -- 痊愈时缓存统计数据
+  created_by_user_id uuid NOT NULL REFERENCES auth.users(id),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+COMMENT ON TABLE public.illness_episodes IS '病程记录';
+COMMENT ON COLUMN public.illness_episodes.status IS 'active=进行中, recovered=已痊愈';
+COMMENT ON COLUMN public.illness_episodes.summary_json IS '统计摘要: {durationDays, medCount, maxTemp, avgCoughPerDay}';
+
 -- 记录表（用药、体温、咳嗽、备注）
 CREATE TABLE IF NOT EXISTS public.records (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   family_id uuid NOT NULL REFERENCES public.families(id) ON DELETE CASCADE,
   child_id uuid NOT NULL REFERENCES public.children(id) ON DELETE CASCADE,
+  episode_id uuid REFERENCES public.illness_episodes(id) ON DELETE SET NULL,
   type text NOT NULL CHECK (type IN ('med', 'cough', 'temp', 'note')),
   time timestamptz NOT NULL,
   payload_json jsonb NOT NULL DEFAULT '{}'::jsonb,
@@ -95,6 +114,7 @@ CREATE TABLE IF NOT EXISTS public.records (
 COMMENT ON TABLE public.records IS '用药/症状记录';
 COMMENT ON COLUMN public.records.type IS 'med=用药, cough=咳嗽, temp=体温, note=备注';
 COMMENT ON COLUMN public.records.payload_json IS '记录详情（JSON格式）';
+COMMENT ON COLUMN public.records.episode_id IS '关联的病程ID';
 
 -- 邀请链接表
 CREATE TABLE IF NOT EXISTS public.invites (
@@ -118,6 +138,7 @@ COMMENT ON TABLE public.invites IS '家庭邀请链接';
 ALTER TABLE public.families ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.family_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.children ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.illness_episodes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invites ENABLE ROW LEVEL SECURITY;
 
@@ -169,6 +190,16 @@ CREATE POLICY "Owner can update children" ON public.children
 
 CREATE POLICY "Owner can delete children" ON public.children
   FOR DELETE USING (is_family_owner(family_id));
+
+-- illness_episodes 表策略
+CREATE POLICY "Family members can view episodes" ON public.illness_episodes
+  FOR SELECT USING (is_family_member(family_id));
+
+CREATE POLICY "Family members can create episodes" ON public.illness_episodes
+  FOR INSERT WITH CHECK (is_family_member(family_id) AND created_by_user_id = auth.uid());
+
+CREATE POLICY "Family members can update episodes" ON public.illness_episodes
+  FOR UPDATE USING (is_family_member(family_id));
 
 -- records 表策略
 CREATE POLICY "Family members can view records" ON public.records

@@ -8,6 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "worker:dev": "wrangler dev --local --port 8787",
     "worker:deploy": "wrangler deploy"
   },
@@ -26,6 +29,10 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260111.0",
+    "@vue/test-utils": "^2.4.6",
+    "@vitest/coverage-v8": "^3.1.0",
+    "happy-dom": "^15.0.0",
+    "vitest": "^3.1.0",
     "@eslint/js": "^9.39.2",
     "@vitejs/plugin-vue": "^5.0.3",
     "autoprefixer": "^10.4.17",

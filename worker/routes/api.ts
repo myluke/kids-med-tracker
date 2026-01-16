@@ -6,6 +6,7 @@ import families from './families'
 import invites from './invites'
 import children from './children'
 import records from './records'
+import episodes from './episodes'
 import { ok, fail } from '../utils/http'
 import { sha256Hex } from '../utils/crypto'
 import { createServiceClient } from '../lib/supabase'
@@ -60,10 +61,12 @@ api.use('/families/*', requireUser)
 api.use('/invites/*', requireUser)
 api.use('/children/*', requireUser)
 api.use('/records/*', requireUser)
+api.use('/episodes/*', requireUser)
 
 api.route('/families', families)
 api.route('/invites', invites)
 api.route('/children', children)
 api.route('/records', records)
+api.route('/episodes', episodes)
 
 export default api

@@ -142,6 +142,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/episodes',
+      name: 'episodes',
+      component: () => import('./views/EpisodeHistoryView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: () => import('./views/ProfileView.vue'),

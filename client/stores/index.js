@@ -7,7 +7,8 @@ import { useUserStore } from './user'
 import { useFamilyStore } from './family'
 import { useChildrenStore } from './children'
 import { useRecordsStore } from './records'
-export { useUserStore, useFamilyStore, useChildrenStore, useRecordsStore }
+import { useEpisodesStore } from './episodes'
+export { useUserStore, useFamilyStore, useChildrenStore, useRecordsStore, useEpisodesStore }
 export { pullRefreshState } from './pullRefresh'
 
 // Re-export 药物配置（向后兼容）
@@ -22,6 +23,7 @@ export async function bootstrap() {
   const familyStore = useFamilyStore()
   const childrenStore = useChildrenStore()
   const recordsStore = useRecordsStore()
+  const episodesStore = useEpisodesStore()
 
   if (userStore.loading) return
   userStore.setLoading(true)
@@ -54,12 +56,15 @@ export async function bootstrap() {
       childrenStore.switchChild(childrenStore.children[0].id)
     }
 
-    // 5. 加载记录
+    // 5. 加载记录和病程
     if (familyStore.currentFamilyId && childrenStore.currentChild) {
-      await recordsStore.loadRecords({
-        familyId: familyStore.currentFamilyId,
-        childId: childrenStore.currentChild
-      })
+      await Promise.all([
+        recordsStore.loadRecords({
+          familyId: familyStore.currentFamilyId,
+          childId: childrenStore.currentChild
+        }),
+        episodesStore.loadActiveEpisode(childrenStore.currentChild)
+      ])
     }
   } catch (e) {
     userStore.setError(e instanceof Error ? e.message : String(e))
@@ -95,22 +100,33 @@ export async function setFamily(familyId) {
 
 /**
  * 切换孩子
- * 按需加载记录
+ * 按需加载记录和病程
  */
 export async function switchChild(childId) {
   const familyStore = useFamilyStore()
   const childrenStore = useChildrenStore()
   const recordsStore = useRecordsStore()
+  const episodesStore = useEpisodesStore()
 
   childrenStore.switchChild(childId)
 
   if (!familyStore.currentFamilyId) return
 
+  const loadPromises = []
+
   if (!recordsStore.recordsByChild[childId]) {
-    await recordsStore.loadRecords({
+    loadPromises.push(recordsStore.loadRecords({
       familyId: familyStore.currentFamilyId,
       childId
-    })
+    }))
+  }
+
+  if (!episodesStore.activeEpisodeByChild[childId]) {
+    loadPromises.push(episodesStore.loadActiveEpisode(childId))
+  }
+
+  if (loadPromises.length > 0) {
+    await Promise.all(loadPromises)
   }
 }
 
@@ -123,11 +139,13 @@ export async function logout() {
   const familyStore = useFamilyStore()
   const childrenStore = useChildrenStore()
   const recordsStore = useRecordsStore()
+  const episodesStore = useEpisodesStore()
 
   await userStore.logout()
   familyStore.reset()
   childrenStore.reset()
   recordsStore.reset()
+  episodesStore.reset()
 }
 
 /**

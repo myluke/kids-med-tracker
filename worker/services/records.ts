@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { ServiceContext } from './types'
 import { ServiceError, ErrorCode } from '../errors/service-error'
 import { checkFamilyMembership } from '../lib/supabase'
+import { ensureActiveEpisode } from './episodes'
 
 // ============ Zod Schemas ============
 
@@ -43,6 +44,7 @@ export type DeleteRecordInput = z.infer<typeof deleteRecordInputSchema>
 export interface RecordDto {
   id: string
   childId: string
+  episodeId: string | null
   type: string
   time: string
   payloadJson: unknown
@@ -76,7 +78,7 @@ export async function listRecords(
 
   let query = ctx.db
     .from('records')
-    .select('id, child_id, type, time, payload_json, created_by_user_id, created_at, updated_at')
+    .select('id, child_id, episode_id, type, time, payload_json, created_by_user_id, created_at, updated_at')
     .eq('family_id', familyId)
     .is('deleted_at', null)
     .order('time', { ascending: false })
@@ -100,6 +102,7 @@ export async function listRecords(
   return (data || []).map(r => ({
     id: r.id,
     childId: r.child_id,
+    episodeId: r.episode_id,
     type: r.type,
     time: r.time,
     payloadJson: r.payload_json,
@@ -118,7 +121,7 @@ export async function listRecords(
 export async function createRecord(
   ctx: ServiceContext,
   input: CreateRecordInput
-): Promise<{ id: string }> {
+): Promise<{ id: string; episodeId: string }> {
   const parsed = createRecordInputSchema.safeParse(input)
   if (!parsed.success) {
     throw ServiceError.validationError('Invalid input', parsed.error.flatten())
@@ -130,6 +133,9 @@ export async function createRecord(
     throw ServiceError.notFamilyMember()
   }
 
+  // Auto-associate or create episode
+  const episodeId = await ensureActiveEpisode(ctx, familyId, childId)
+
   const payloadJson = JSON.stringify(payload ?? null)
 
   const { data: record, error } = await ctx.db
@@ -137,6 +143,7 @@ export async function createRecord(
     .insert({
       family_id: familyId,
       child_id: childId,
+      episode_id: episodeId,
       type,
       time,
       payload_json: payloadJson,
@@ -150,7 +157,7 @@ export async function createRecord(
     throw ServiceError.dbError('Failed to create record')
   }
 
-  return { id: record.id }
+  return { id: record.id, episodeId }
 }
 
 /**

@@ -25,7 +25,36 @@
     "dayBeforeYesterday": "2 days ago",
     "notFilled": "Not provided",
     "working": "Working…",
-    "error": "Operation failed"
+    "error": "Operation failed",
+    "loading": "Loading..."
+  },
+  "episode": {
+    "title": "Illness Episodes",
+    "current": "Current Episode",
+    "history": "History",
+    "historySection": "Past Episodes",
+    "dayCount": "Day {days}",
+    "days": " days",
+    "startedAt": "Started {date}",
+    "endedAt": "Ended {date}",
+    "dateRange": "{start} - {end}",
+    "dateRangeOngoing": "{start} - ongoing",
+    "markRecovered": "Mark Recovered",
+    "confirmRecovery": "Confirm recovery?",
+    "recoveryConfirmSubtitle": "A new episode will start when symptoms return",
+    "confirmRecoveryBtn": "Confirm Recovery",
+    "thisPeriodStats": "This Episode Stats",
+    "stats": {
+      "duration": "Duration",
+      "medCount": "Medications",
+      "maxTemp": "Max Temp",
+      "avgCough": "Avg Cough/Day"
+    },
+    "medCountShort": "{count} meds",
+    "maxTempShort": "Max {temp}°",
+    "empty": "No illness episodes",
+    "newEpisodeStarted": "New episode started",
+    "recovered": "🎉 Recovered!"
   },
   "toast": {
     "exported": "✓ Exported",

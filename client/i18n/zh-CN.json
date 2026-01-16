@@ -25,7 +25,36 @@
     "dayBeforeYesterday": "前天",
     "notFilled": "未填写",
     "working": "处理中…",
-    "error": "操作失败"
+    "error": "操作失败",
+    "loading": "加载中..."
+  },
+  "episode": {
+    "title": "病程管理",
+    "current": "当前病程",
+    "history": "历史病程",
+    "historySection": "历史记录",
+    "dayCount": "已记录 {days} 天",
+    "days": "天",
+    "startedAt": "开始于 {date}",
+    "endedAt": "结束于 {date}",
+    "dateRange": "{start} - {end}",
+    "dateRangeOngoing": "{start} 至今",
+    "markRecovered": "标记痊愈",
+    "confirmRecovery": "确认宝贝已痊愈？",
+    "recoveryConfirmSubtitle": "痊愈后将开始新的病程周期",
+    "confirmRecoveryBtn": "确认痊愈",
+    "thisPeriodStats": "本次病程统计",
+    "stats": {
+      "duration": "持续天数",
+      "medCount": "用药次数",
+      "maxTemp": "最高体温",
+      "avgCough": "日均咳嗽"
+    },
+    "medCountShort": "{count}次用药",
+    "maxTempShort": "最高{temp}°",
+    "empty": "暂无病程记录",
+    "newEpisodeStarted": "已开始新的病程记录",
+    "recovered": "🎉 宝贝痊愈了！"
   },
   "toast": {
     "exported": "✓ 已导出记录",

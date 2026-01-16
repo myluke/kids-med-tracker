@@ -6,6 +6,7 @@ import { useUserStore, useFamilyStore, useChildrenStore, useRecordsStore, create
 import ChildTabs from '@/components/ChildTabs.vue'
 import ChildEditModal from '@/components/profile/ChildEditModal.vue'
 import MedTimer from '@/components/MedTimer.vue'
+import EpisodeBanner from '@/components/EpisodeBanner.vue'
 import QuickActions from '@/components/QuickActions.vue'
 import BottomSheet from '@/components/BottomSheet.vue'
 import MedPanel from '@/components/MedPanel.vue'
@@ -135,6 +136,9 @@ const onRefresh = async (done) => {
 
         <!-- 退烧药状态 -->
         <MedTimer />
+
+        <!-- 病程状态 -->
+        <EpisodeBanner />
 
         <!-- 快速操作 -->
         <QuickActions

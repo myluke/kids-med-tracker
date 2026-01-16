@@ -1,11 +1,12 @@
 import { defineStore, storeToRefs } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { safeJsonParse } from '@/services/api'
 import * as recordService from '@/services/recordService'
 import { feverMeds } from '@/config/medications'
 import { useUserStore } from './user'
 import { useFamilyStore } from './family'
 import { useChildrenStore } from './children'
+import { useEpisodesStore } from './episodes'
 
 export const useRecordsStore = defineStore('records', () => {
   const recordsByChild = ref({})
@@ -24,10 +25,20 @@ export const useRecordsStore = defineStore('records', () => {
   })
 
   /**
-   * 最后一次退烧药记录
+   * 当前病程的记录
+   */
+  const currentEpisodeRecords = computed(() => {
+    const episodesStore = useEpisodesStore()
+    const episode = episodesStore.activeEpisode
+    if (!episode) return currentRecords.value
+    return currentRecords.value.filter(r => r.episodeId === episode.id)
+  })
+
+  /**
+   * 最后一次退烧药记录（仅当前病程）
    */
   const lastFeverMed = computed(() => {
-    return currentRecords.value
+    return currentEpisodeRecords.value
       .filter(r => r.type === 'med' && feverMeds.includes(r.drug))
       .sort((a, b) => new Date(b.time) - new Date(a.time))[0] || null
   })
@@ -98,6 +109,7 @@ export const useRecordsStore = defineStore('records', () => {
         const payload = typeof row.payloadJson === 'string' ? safeJsonParse(row.payloadJson) : row.payload
         return {
           id: row.id,
+          episodeId: row.episodeId,
           type: row.type,
           time: row.time,
           createdByUserId: row.createdByUserId,
@@ -122,6 +134,7 @@ export const useRecordsStore = defineStore('records', () => {
   const addRecord = async (type, payload) => {
     const userStore = useUserStore()
     const familyStore = useFamilyStore()
+    const episodesStore = useEpisodesStore()
 
     const familyId = familyStore.currentFamilyId
     const childId = currentChild.value
@@ -140,8 +153,18 @@ export const useRecordsStore = defineStore('records', () => {
       payload
     })
 
+    // Update episodes store with the episode ID
+    if (created.episodeId) {
+      episodesStore.setActiveEpisodeId(childId, created.episodeId)
+      // Reload active episode if we don't have it cached
+      if (!episodesStore.activeEpisode || episodesStore.activeEpisode.id !== created.episodeId) {
+        await episodesStore.loadActiveEpisode(childId)
+      }
+    }
+
     const localRecord = {
       id: created.id,
+      episodeId: created.episodeId,
       type,
       time: now,
       createdByUserId: userStore.user?.id,
@@ -327,6 +350,7 @@ export const useRecordsStore = defineStore('records', () => {
     recordsByChild,
     loading,
     currentRecords,
+    currentEpisodeRecords,
     lastFeverMed,
     timeSinceLastFeverMed,
     todayStats,
