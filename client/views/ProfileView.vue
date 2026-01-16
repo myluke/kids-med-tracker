@@ -54,6 +54,25 @@ const onRefresh = async (done) => {
 
       <!-- 功能列表 -->
       <div class="card p-0 overflow-hidden">
+        <!-- 历史病程 -->
+        <button
+          class="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b border-gray-100"
+          @click="router.push('/episodes')"
+        >
+          <div class="flex items-center gap-3">
+            <span class="text-xl">📋</span>
+            <div class="text-left">
+              <div class="text-gray-800 font-medium">
+                {{ t('views.profile.episodeHistory') }}
+              </div>
+              <div class="text-gray-400 text-sm">
+                {{ t('views.profile.episodeHistoryDesc') }}
+              </div>
+            </div>
+          </div>
+          <span class="text-gray-300">›</span>
+        </button>
+
         <!-- 导出数据 -->
         <button
           class="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b border-gray-100"

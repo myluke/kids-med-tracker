@@ -259,6 +259,8 @@
       "title": "我的",
       "accountSection": "账号信息",
       "emailLabel": "邮箱",
+      "episodeHistory": "历史病程",
+      "episodeHistoryDesc": "查看所有病程记录",
       "exportData": "导出数据",
       "exportDesc": "将所有记录导出为文件",
       "logout": "退出登录",

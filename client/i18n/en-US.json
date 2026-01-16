@@ -259,6 +259,8 @@
       "title": "Me",
       "accountSection": "Account",
       "emailLabel": "Email",
+      "episodeHistory": "Illness History",
+      "episodeHistoryDesc": "View all illness episodes",
       "exportData": "Export Data",
       "exportDesc": "Export all records to a file",
       "logout": "Log Out",
