@@ -80,34 +80,82 @@
 
 ### 本地开发
 
-> 本项目现为 **Cloudflare Worker 托管前端静态资源 + API**。本地建议用 Worker 方式启动（与线上一致）。
+> 本项目使用 **Cloudflare Worker 托管前端静态资源 + API** 架构。
+
+#### 1. 克隆并安装依赖
 
 ```bash
-# 克隆项目
 git clone https://github.com/your-username/kids-med-tracker.git
 cd kids-med-tracker
-
-# 安装依赖
 pnpm install
+```
 
-# 前端环境变量（复制模板即可）
+#### 2. 配置环境变量
+
+```bash
+# 前端环境变量
 cp .env.example .env.local
 
-# Worker 本地变量（复制模板即可）
+# Worker 本地变量
 cp .dev.vars.example .dev.vars
+```
 
-# 构建前端静态资源（dist）
+**`.env.local` 配置说明：**
+
+| 变量 | 说明 | 本地开发值 |
+|------|------|------------|
+| `VITE_TURNSTILE_SITE_KEY` | Turnstile 站点密钥 | 可留空 |
+| `VITE_DEV_USER_EMAIL` | 本地模拟登录邮箱 | `test@example.com` |
+
+**`.dev.vars` 配置说明：**
+
+| 变量 | 说明 | 本地开发值 |
+|------|------|------------|
+| `ENV` | 运行环境 | `local` |
+| `SUPABASE_URL` | Supabase 项目 URL | 你的 Supabase URL |
+| `SUPABASE_ANON_KEY` | Supabase anon key | 你的 anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | 你的 service key |
+| `TURNSTILE_SECRET_KEY` | Turnstile 密钥 | `dev`（跳过校验） |
+| `INVITE_TOKEN_PEPPER` | 邀请链接加密盐 | `dev` |
+
+#### 3. 启动开发服务器
+
+**方式一：全栈开发（推荐，与线上一致）**
+
+```bash
+# 先构建前端
 pnpm build
 
-# 启动 Worker（默认端口 8787）
+# 启动 Worker（含前端 + API）
 pnpm worker:dev
 ```
 
-访问 http://localhost:8787 查看应用。
+访问 http://localhost:8787
 
-本地开发说明：
-- Worker 侧支持 `ENV=local` 时跳过 Access JWT 校验；Turnstile 在 `ENV=local` 且 token 为 `dev` 时跳过校验。
-- 你可以用 `.dev.vars`（已被 `.gitignore` 忽略）配置本地变量，例如：`ENV=local`、`INVITE_TOKEN_PEPPER=dev`、`TURNSTILE_SECRET_KEY=dev`。
+**方式二：纯前端开发（热更新）**
+
+```bash
+pnpm dev
+```
+
+访问 http://localhost:5173（API 需另行配置代理）
+
+#### 4. 常用命令
+
+| 命令 | 说明 |
+|------|------|
+| `pnpm dev` | 启动前端开发服务器（热更新） |
+| `pnpm build` | 构建前端到 `dist/` |
+| `pnpm worker:dev` | 启动本地 Worker |
+| `pnpm test` | 运行单元测试 |
+| `pnpm test:watch` | 监听模式运行测试 |
+| `pnpm lint` | ESLint 检查并修复 |
+
+#### 5. 本地开发特性
+
+- **跳过认证**：`ENV=local` 时，Worker 跳过 Cloudflare Access JWT 校验
+- **跳过 Turnstile**：token 为 `dev` 时跳过人机校验
+- **模拟用户**：通过 `VITE_DEV_USER_EMAIL` 注入测试身份
 
 ## 📦 部署指南
 
