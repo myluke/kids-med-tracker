@@ -4,6 +4,11 @@
 # local / preview / production
 ENV=local
 
+# Supabase（从 Supabase Dashboard → Settings → API 获取）
+SUPABASE_URL=https://yvyrwsvegkevngunzahp.supabase.co
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
 # Cloudflare Access
 ACCESS_AUD=
 ACCESS_ISS=
