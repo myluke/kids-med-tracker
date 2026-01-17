@@ -61,6 +61,7 @@ function renderWidget() {
   try {
     widgetId.value = window.turnstile.render(containerRef.value, {
       sitekey: siteKey,
+      theme: 'light',
       callback: (token) => {
         showManualInput.value = false
         emit('update:modelValue', token)
