@@ -131,6 +131,35 @@ CREATE TABLE IF NOT EXISTS public.invites (
 
 COMMENT ON TABLE public.invites IS '家庭邀请链接';
 
+-- 用户档案表（追踪密码设置状态等）
+CREATE TABLE IF NOT EXISTS public.user_profiles (
+  user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  has_password boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+COMMENT ON TABLE public.user_profiles IS '用户档案（密码状态等）';
+COMMENT ON COLUMN public.user_profiles.has_password IS '用户是否已设置密码';
+
+-- updated_at 自动更新触发器
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = public
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER update_user_profiles_updated_at
+  BEFORE UPDATE ON public.user_profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_updated_at_column();
+
 -- ============================================
 -- 3. 启用行级安全 (RLS)
 -- ============================================
@@ -141,6 +170,7 @@ ALTER TABLE public.children ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.illness_episodes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
 -- 4. RLS 策略
@@ -221,3 +251,7 @@ CREATE POLICY "Owner can view invites" ON public.invites
 
 CREATE POLICY "Owner can create invite" ON public.invites
   FOR INSERT WITH CHECK (is_family_owner(family_id));
+
+-- user_profiles 表策略
+CREATE POLICY "Users can read own profile" ON public.user_profiles
+  FOR SELECT USING (auth.uid() = user_id);
