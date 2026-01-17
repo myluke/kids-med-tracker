@@ -256,11 +256,15 @@ function onBackToEmail() {
   resendCountdown.value = 0
 }
 
-// 监听 auth 状态变化
+// 监听 auth 状态变化（仅用于处理外部登录，如 OAuth）
 onMounted(() => {
   const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session) {
+    // 密码登录和 OTP 登录已在各自的处理函数中调用 bootstrap()
+    // 这里只处理外部 OAuth 回调等场景
+    if (event === 'SIGNED_IN' && session && !isSubmitting.value) {
       await bootstrap()
+      const redirect = route.query.redirect || '/'
+      router.replace({ path: redirect })
     }
   })
 
