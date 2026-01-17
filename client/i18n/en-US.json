@@ -79,7 +79,9 @@
   },
   "stats": {
     "tempTrend24h": "🌡️ Temperature trend (24h)",
+    "tempTrend": "🌡️ Temperature trend",
     "coughTrend3d": "🫁 Cough count (3 days)",
+    "coughTrend": "🫁 Cough count",
     "recovery": "📊 Recovery stats",
     "totalDays": "Days tracked",
     "totalMeds": "Total meds",

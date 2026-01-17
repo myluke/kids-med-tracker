@@ -281,12 +281,13 @@ export const useRecordsStore = defineStore('records', () => {
    * @param {string|null} episodeId - 可选，按病程ID过滤
    */
   const getTempData = (hours = 24, episodeId = null) => {
-    const cutoff = Date.now() - hours * 60 * 60 * 1000
+    // 如果指定了病程，不限制时间范围
+    const cutoff = episodeId ? 0 : Date.now() - hours * 60 * 60 * 1000
     return currentRecords.value
       .filter(r => {
         // 类型过滤
         if (r.type !== 'temp' && !(r.type === 'med' && r.temp)) return false
-        // 时间过滤
+        // 时间过滤（病程模式下不限制）
         if (new Date(r.time).getTime() < cutoff) return false
         // 病程过滤
         if (episodeId && r.episodeId !== episodeId) return false
@@ -307,8 +308,29 @@ export const useRecordsStore = defineStore('records', () => {
    */
   const getCoughData = (days = 3, t, episodeId = null) => {
     const translate = typeof t === 'function' ? t : (key) => key
-    const labelKeys = ['common.dayBeforeYesterday', 'common.yesterday', 'common.today']
 
+    // 如果指定了病程，按病程内的实际日期统计
+    if (episodeId) {
+      const episodeRecords = currentRecords.value.filter(r =>
+        r.type === 'cough' && r.episodeId === episodeId
+      )
+      // 获取所有有咳嗽记录的日期
+      const dateMap = {}
+      episodeRecords.forEach(r => {
+        const dateKey = new Date(r.time).toLocaleDateString()
+        dateMap[dateKey] = (dateMap[dateKey] || 0) + 1
+      })
+      // 按日期排序返回
+      return Object.entries(dateMap)
+        .sort((a, b) => new Date(a[0]) - new Date(b[0]))
+        .map(([date, count]) => ({
+          label: new Date(date).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' }),
+          count
+        }))
+    }
+
+    // 原有逻辑：最近 N 天
+    const labelKeys = ['common.dayBeforeYesterday', 'common.yesterday', 'common.today']
     const result = []
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date()
@@ -321,8 +343,6 @@ export const useRecordsStore = defineStore('records', () => {
         if (r.type !== 'cough') return false
         const recordTime = new Date(r.time).getTime()
         if (recordTime < startTime || recordTime >= endTime) return false
-        // 病程过滤
-        if (episodeId && r.episodeId !== episodeId) return false
         return true
       }).length
 

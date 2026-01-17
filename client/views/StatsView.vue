@@ -102,7 +102,7 @@ const onRefresh = async (done) => {
       <div class="card">
         <div class="flex justify-between items-center mb-4">
           <h3 class="font-semibold text-gray-800">
-            {{ t('stats.tempTrend24h') }}
+            {{ selectedEpisodeId ? t('stats.tempTrend') : t('stats.tempTrend24h') }}
           </h3>
         </div>
         <TempChart :episode-id="selectedEpisodeId" />
@@ -112,7 +112,7 @@ const onRefresh = async (done) => {
       <div class="card">
         <div class="flex justify-between items-center mb-4">
           <h3 class="font-semibold text-gray-800">
-            {{ t('stats.coughTrend3d') }}
+            {{ selectedEpisodeId ? t('stats.coughTrend') : t('stats.coughTrend3d') }}
           </h3>
         </div>
         <CoughChart :episode-id="selectedEpisodeId" />
