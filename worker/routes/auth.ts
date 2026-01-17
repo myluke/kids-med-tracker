@@ -133,9 +133,9 @@ auth.post('/sign-in-password', verifyTurnstile, async c => {
 /**
  * POST /api/auth/send-verify-code
  * 发送设置密码的验证码
- * 需要登录状态
+ * 需要登录状态 + Turnstile 验证
  */
-auth.post('/send-verify-code', async c => {
+auth.post('/send-verify-code', verifyTurnstile, async c => {
   try {
     const ctx = buildServiceContext(c)
     const data = await authService.sendVerifyCode(ctx)

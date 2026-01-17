@@ -31,7 +31,7 @@ export type SignInPasswordInput = z.infer<typeof signInPasswordInputSchema>
 export type SetPasswordInput = z.infer<typeof setPasswordInputSchema>
 
 export interface MeResult {
-  user: { id: string; email: string } | null
+  user: { id: string; email: string; hasPassword?: boolean } | null
   families: Array<{ id: string; name: string; role: FamilyRole }>
 }
 
@@ -82,7 +82,22 @@ export async function getMe(ctx: OptionalUserContext): Promise<MeResult> {
 
   try {
     const families = await getUserFamilies(ctx.db, ctx.user.id)
-    return { user: ctx.user, families }
+
+    // 查询 user_profiles 获取 has_password
+    const serviceClient = createServiceClient(ctx.env)
+    const { data: profile } = await serviceClient
+      .from('user_profiles')
+      .select('has_password')
+      .eq('user_id', ctx.user.id)
+      .single()
+
+    return {
+      user: {
+        ...ctx.user,
+        hasPassword: profile?.has_password ?? false
+      },
+      families
+    }
   } catch (err) {
     console.error('Failed to get user:', err)
     return { user: null, families: [] }

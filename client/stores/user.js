@@ -4,6 +4,7 @@ import * as authService from '@/services/authService'
 
 export const useUserStore = defineStore('user', () => {
   const user = ref(null)
+  const hasPassword = ref(false)
   const initialized = ref(false)
   const loading = ref(false)
   const error = ref(null)
@@ -15,7 +16,15 @@ export const useUserStore = defineStore('user', () => {
   const fetchMe = async () => {
     const me = await authService.getMe()
     user.value = me.user
+    hasPassword.value = me.user?.hasPassword ?? false
     return me
+  }
+
+  /**
+   * 设置密码状态（设置成功后调用）
+   */
+  const setHasPassword = (value) => {
+    hasPassword.value = value
   }
 
   /**
@@ -52,6 +61,7 @@ export const useUserStore = defineStore('user', () => {
    */
   const reset = () => {
     user.value = null
+    hasPassword.value = false
     initialized.value = false
     loading.value = false
     error.value = null
@@ -59,11 +69,13 @@ export const useUserStore = defineStore('user', () => {
 
   return {
     user,
+    hasPassword,
     initialized,
     loading,
     error,
 
     fetchMe,
+    setHasPassword,
     setInitialized,
     setLoading,
     setError,
