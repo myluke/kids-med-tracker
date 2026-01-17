@@ -68,7 +68,10 @@ const summary = computed(() => {
             <span>💊</span>
             {{ t('episode.medCountShort', { count: summary.medCount }) }}
           </span>
-          <span v-if="summary.maxTemp" class="flex items-center gap-1">
+          <span
+            v-if="summary.maxTemp"
+            class="flex items-center gap-1"
+          >
             <span>🌡️</span>
             {{ t('episode.maxTempShort', { temp: summary.maxTemp }) }}
           </span>

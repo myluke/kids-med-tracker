@@ -17,6 +17,9 @@ export type Bindings = {
   // 邀请令牌加密
   INVITE_TOKEN_PEPPER: string
 
+  // Turnstile
+  TURNSTILE_SECRET_KEY: string
+
   ENV: 'production' | 'preview' | 'local'
 }
 

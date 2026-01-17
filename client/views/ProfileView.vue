@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useUserStore, logout, bootstrap } from '@/stores'
 import FamilySection from '@/components/profile/FamilySection.vue'
 import ChildrenSection from '@/components/profile/ChildrenSection.vue'
+import PasswordSection from '@/components/profile/PasswordSection.vue'
 import PullToRefresh from '@/components/PullToRefresh.vue'
 
 const router = useRouter()
@@ -45,6 +46,9 @@ const onRefresh = async (done) => {
           </div>
         </div>
       </div>
+
+      <!-- 密码设置 -->
+      <PasswordSection />
 
       <!-- 家庭管理 -->
       <FamilySection />

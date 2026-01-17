@@ -60,7 +60,9 @@ const handleConfirm = async () => {
     <div class="py-4">
       <!-- Header -->
       <div class="text-center mb-6">
-        <div class="text-4xl mb-2">🎉</div>
+        <div class="text-4xl mb-2">
+          🎉
+        </div>
         <h2 class="text-xl font-bold text-gray-800">
           {{ t('episode.confirmRecovery') }}
         </h2>
@@ -70,7 +72,10 @@ const handleConfirm = async () => {
       </div>
 
       <!-- Stats Summary -->
-      <div v-if="stats" class="bg-gray-50 rounded-2xl p-4 mb-6">
+      <div
+        v-if="stats"
+        class="bg-gray-50 rounded-2xl p-4 mb-6"
+      >
         <h3 class="text-sm font-semibold text-gray-600 mb-3">
           {{ t('episode.thisPeriodStats') }}
         </h3>
@@ -111,8 +116,13 @@ const handleConfirm = async () => {
       </div>
 
       <!-- Loading state -->
-      <div v-else class="bg-gray-50 rounded-2xl p-8 mb-6 text-center">
-        <div class="text-gray-400">{{ t('common.loading') }}</div>
+      <div
+        v-else
+        class="bg-gray-50 rounded-2xl p-8 mb-6 text-center"
+      >
+        <div class="text-gray-400">
+          {{ t('common.loading') }}
+        </div>
       </div>
 
       <!-- Actions -->

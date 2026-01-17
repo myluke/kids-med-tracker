@@ -211,10 +211,18 @@
       },
       "emailStep": {
         "emailLabel": "Email address",
-        "emailPlaceholder": "Enter your email"
+        "emailPlaceholder": "Enter your email",
+        "subtitle": "Enter your email to continue",
+        "continueButton": "Continue"
       },
       "codeStep": {
         "backButton": "Change email"
+      },
+      "password": {
+        "title": "Enter password",
+        "placeholder": "Enter your password",
+        "loginButton": "Log in",
+        "useOtp": "Use verification code instead"
       },
       "errors": {
         "sendCodeFailed": "Failed to send code, please try again",
@@ -222,6 +230,7 @@
         "invalidToken": "Invalid login link",
         "expiredToken": "Login link has expired",
         "authFailed": "Login failed, please try again",
+        "invalidPassword": "Invalid email or password",
         "unknown": "An unknown error occurred"
       }
     },
@@ -263,6 +272,25 @@
       "title": "Me",
       "accountSection": "Account",
       "emailLabel": "Email",
+      "password": {
+        "title": "Password Settings",
+        "description": "Set a password for faster login next time",
+        "sendCode": "Send verification code",
+        "codeLabel": "Verification code",
+        "codePlaceholder": "000000",
+        "newPasswordLabel": "New password",
+        "newPasswordPlaceholder": "Enter new password",
+        "confirmPasswordLabel": "Confirm password",
+        "confirmPasswordPlaceholder": "Re-enter password",
+        "passwordHint": "At least 6 characters",
+        "passwordMismatch": "Passwords do not match",
+        "setButton": "Set password",
+        "resendCode": "Resend code",
+        "resendCountdown": "Resend in {seconds}s",
+        "sendCodeFailed": "Failed to send code",
+        "setSuccess": "Password set successfully",
+        "setFailed": "Failed to set password"
+      },
       "episodeHistory": "Illness History",
       "episodeHistoryDesc": "View all illness episodes",
       "exportData": "Export Data",

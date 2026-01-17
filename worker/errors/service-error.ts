@@ -9,6 +9,13 @@ export const ErrorCode = {
   // 认证错误
   UNAUTHENTICATED: 'UNAUTHENTICATED',
   INVALID_EMAIL: 'INVALID_EMAIL',
+  INVALID_PASSWORD: 'INVALID_PASSWORD',
+  PASSWORD_TOO_SHORT: 'PASSWORD_TOO_SHORT',
+  INVALID_VERIFY_CODE: 'INVALID_VERIFY_CODE',
+
+  // Turnstile 错误
+  TURNSTILE_REQUIRED: 'TURNSTILE_REQUIRED',
+  TURNSTILE_FAILED: 'TURNSTILE_FAILED',
 
   // 授权错误
   FORBIDDEN: 'FORBIDDEN',
@@ -61,6 +68,18 @@ export class ServiceError extends Error {
 
   static unauthorized(message = 'Not authenticated') {
     return new ServiceError(401, ErrorCode.UNAUTHENTICATED, message)
+  }
+
+  static invalidPassword(message = 'Invalid password') {
+    return new ServiceError(401, ErrorCode.INVALID_PASSWORD, message)
+  }
+
+  static passwordTooShort(minLength = 6) {
+    return new ServiceError(400, ErrorCode.PASSWORD_TOO_SHORT, `Password must be at least ${minLength} characters`)
+  }
+
+  static invalidVerifyCode(message = 'Invalid or expired verification code') {
+    return new ServiceError(400, ErrorCode.INVALID_VERIFY_CODE, message)
   }
 
   static forbidden(message = 'Access denied') {

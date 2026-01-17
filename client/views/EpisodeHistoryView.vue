@@ -65,20 +65,35 @@ const handleEpisodeClick = (episode) => {
       </div>
 
       <!-- Loading state -->
-      <div v-if="loading && !hasEpisodes" class="card text-center py-8">
-        <div class="text-gray-400">{{ t('common.loading') }}</div>
+      <div
+        v-if="loading && !hasEpisodes"
+        class="card text-center py-8"
+      >
+        <div class="text-gray-400">
+          {{ t('common.loading') }}
+        </div>
       </div>
 
       <!-- Empty state -->
-      <div v-else-if="!hasEpisodes" class="card text-center py-8">
-        <div class="text-4xl mb-2">🏥</div>
-        <div class="text-gray-500">{{ t('episode.empty') }}</div>
+      <div
+        v-else-if="!hasEpisodes"
+        class="card text-center py-8"
+      >
+        <div class="text-4xl mb-2">
+          🏥
+        </div>
+        <div class="text-gray-500">
+          {{ t('episode.empty') }}
+        </div>
       </div>
 
       <!-- Episode list -->
       <template v-else>
         <!-- Current episode -->
-        <div v-if="currentEpisode" class="space-y-2">
+        <div
+          v-if="currentEpisode"
+          class="space-y-2"
+        >
           <div class="text-sm font-medium text-gray-500 px-1">
             {{ t('episode.current') }}
           </div>
@@ -89,7 +104,10 @@ const handleEpisodeClick = (episode) => {
         </div>
 
         <!-- History episodes -->
-        <div v-if="historyEpisodes.length > 0" class="space-y-2">
+        <div
+          v-if="historyEpisodes.length > 0"
+          class="space-y-2"
+        >
           <div class="text-sm font-medium text-gray-500 px-1">
             {{ t('episode.historySection') }}
           </div>
