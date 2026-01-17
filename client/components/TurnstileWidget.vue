@@ -62,6 +62,7 @@ function renderWidget() {
     widgetId.value = window.turnstile.render(containerRef.value, {
       sitekey: siteKey,
       callback: (token) => {
+        showManualInput.value = false
         emit('update:modelValue', token)
       },
       'expired-callback': () => {
